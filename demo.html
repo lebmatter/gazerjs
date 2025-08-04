@@ -339,10 +339,14 @@
               this.camera
                 .play()
                 .then(() => {
-                  // Set canvas dimensions to match video
+                  // Set initial canvas dimensions if in debug mode
                   if (this.canvas) {
-                    this.canvas.width = this.camera.videoWidth;
-                    this.canvas.height = this.camera.videoHeight;
+                    // Use a small delay to ensure video dimensions are available
+                    setTimeout(() => {
+                      const rect = cameraDiv.getBoundingClientRect();
+                      this.canvas.width = rect.width;
+                      this.canvas.height = rect.height;
+                    }, 100);
                   }
                   resolve();
                 })
@@ -379,7 +383,7 @@
           const faceCount = detections.detections.length;
 
           // Clear previous debug drawings
-          if (this.debugMode && this.ctx) {
+          if (this.debugMode && this.ctx && this.canvas) {
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
           }
 
@@ -428,28 +432,73 @@
         }
 
         drawFaceRectangles(detections) {
+          if (!this.canvas || !this.ctx) return;
+
+          // Get the actual displayed dimensions of the video
+          const videoRect = this.camera.getBoundingClientRect();
+          const cameraRect = this.camera.parentElement.getBoundingClientRect();
+
+          // Update canvas size to match the container
+          this.canvas.width = cameraRect.width;
+          this.canvas.height = cameraRect.height;
+
+          // Calculate scaling factors based on video's actual display size vs natural size
+          const scaleX = cameraRect.width / this.camera.videoWidth;
+          const scaleY = cameraRect.height / this.camera.videoHeight;
+
+          // Set drawing styles
           this.ctx.strokeStyle = "#00FF00";
           this.ctx.lineWidth = 3;
           this.ctx.font = "16px Arial";
           this.ctx.fillStyle = "#00FF00";
+          this.ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+          this.ctx.shadowBlur = 2;
 
           detections.forEach((detection, index) => {
             const bbox = detection.boundingBox;
 
-            // Convert normalized coordinates to canvas coordinates
-            const x = bbox.originX * this.canvas.width;
-            const y = bbox.originY * this.canvas.height;
-            const width = bbox.width * this.canvas.width;
-            const height = bbox.height * this.canvas.height;
+            // Convert normalized coordinates to actual video coordinates
+            const videoX = bbox.originX * this.camera.videoWidth;
+            const videoY = bbox.originY * this.camera.videoHeight;
+            const videoWidth = bbox.width * this.camera.videoWidth;
+            const videoHeight = bbox.height * this.camera.videoHeight;
+
+            // Scale to canvas coordinates
+            const x = videoX * scaleX;
+            const y = videoY * scaleY;
+            const width = videoWidth * scaleX;
+            const height = videoHeight * scaleY;
 
             // Draw rectangle
             this.ctx.strokeRect(x, y, width, height);
 
-            // Draw label
+            // Draw label with background
             const confidence = (detection.categories[0]?.score * 100).toFixed(
               1
             );
-            this.ctx.fillText(`Face ${index + 1} (${confidence}%)`, x, y - 5);
+            const label = `Face ${index + 1} (${confidence}%)`;
+
+            // Measure text for background
+            const textMetrics = this.ctx.measureText(label);
+            const textHeight = 20;
+
+            // Draw label background
+            this.ctx.fillStyle = "rgba(0, 255, 0, 0.8)";
+            this.ctx.fillRect(
+              x,
+              y - textHeight - 5,
+              textMetrics.width + 10,
+              textHeight + 5
+            );
+
+            // Draw label text
+            this.ctx.fillStyle = "#000000";
+            this.ctx.shadowColor = "transparent";
+            this.ctx.fillText(label, x + 5, y - 8);
+
+            // Reset shadow for next rectangle
+            this.ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+            this.ctx.shadowBlur = 2;
           });
         }
 
