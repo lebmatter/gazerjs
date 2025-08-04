@@ -1,333 +1,632 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Face Detector Demo</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f0f0f0;
-        }
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f0f0f0;
+      }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
 
-        h1 {
-            text-align: center;
-            color: #333;
-        }
+      h1 {
+        text-align: center;
+        color: #333;
+      }
 
-        .demo-section {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
+      .demo-section {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 20px;
+      }
 
-        .camera-container {
-            flex: 1;
-            background: #000;
-            border-radius: 8px;
-            overflow: hidden;
-            min-height: 400px;
-            position: relative;
-        }
+      .camera-container {
+        flex: 1;
+        background: #000;
+        border-radius: 8px;
+        overflow: hidden;
+        min-height: 400px;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
 
-        .controls {
-            flex: 0 0 300px;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
+      .controls {
+        flex: 0 0 300px;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
 
-        .status {
-            margin-bottom: 20px;
-            padding: 10px;
-            border-radius: 4px;
-            font-weight: bold;
-            text-align: center;
-        }
+      .status {
+        margin-bottom: 20px;
+        padding: 10px;
+        border-radius: 4px;
+        font-weight: bold;
+        text-align: center;
+      }
 
-        .status.good {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
+      .status.good {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
 
-        .status.warning {
-            background-color: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
-        }
+      .status.warning {
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+      }
 
-        .status.error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
+      .status.error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
 
-        button {
-            width: 100%;
-            padding: 10px;
-            margin: 5px 0;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-        }
+      button {
+        width: 100%;
+        padding: 10px;
+        margin: 5px 0;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+      }
 
-        .btn-primary {
-            background-color: #007bff;
-            color: white;
-        }
+      .btn-primary {
+        background-color: #007bff;
+        color: white;
+      }
 
-        .btn-success {
-            background-color: #28a745;
-            color: white;
-        }
+      .btn-success {
+        background-color: #28a745;
+        color: white;
+      }
 
-        .btn-danger {
-            background-color: #dc3545;
-            color: white;
-        }
+      .btn-danger {
+        background-color: #dc3545;
+        color: white;
+      }
 
-        .btn-secondary {
-            background-color: #6c757d;
-            color: white;
-        }
+      .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+      }
 
-        button:hover {
-            opacity: 0.8;
-        }
+      button:hover {
+        opacity: 0.8;
+      }
 
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
 
-        .log {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
-            padding: 10px;
-            max-height: 200px;
-            overflow-y: auto;
-            font-family: monospace;
-            font-size: 12px;
-        }
+      .log {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 10px;
+        max-height: 200px;
+        overflow-y: auto;
+        font-family: monospace;
+        font-size: 12px;
+      }
 
-        .log-entry {
-            margin-bottom: 5px;
-            padding: 2px 0;
-        }
+      .log-entry {
+        margin-bottom: 5px;
+        padding: 2px 0;
+      }
 
-        .log-entry.error {
-            color: #dc3545;
-        }
+      .log-entry.error {
+        color: #dc3545;
+      }
 
-        .log-entry.warning {
-            color: #ffc107;
-        }
+      .log-entry.warning {
+        color: #ffc107;
+      }
 
-        .log-entry.success {
-            color: #28a745;
-        }
+      .log-entry.success {
+        color: #28a745;
+      }
 
-        .log-entry.info {
-            color: #17a2b8;
-        }
+      .log-entry.info {
+        color: #17a2b8;
+      }
 
-        .instructions {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
+      .instructions {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
 
-        .instructions h3 {
-            margin-top: 0;
-            color: #333;
-        }
+      .instructions h3 {
+        margin-top: 0;
+        color: #333;
+      }
 
-        .instructions ul {
-            padding-left: 20px;
-        }
+      .instructions ul {
+        padding-left: 20px;
+      }
 
-        .instructions li {
-            margin-bottom: 5px;
-        }
+      .instructions li {
+        margin-bottom: 5px;
+      }
+
+      .placeholder-text {
+        color: white;
+        font-size: 18px;
+        text-align: center;
+        z-index: 1;
+      }
+
+      /* Video and canvas styling */
+      .camera-container video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 8px;
+      }
+
+      .camera-container canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 2;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <h1>Face Detector Demo</h1>
-        
-        <div class="instructions">
-            <h3>Instructions:</h3>
-            <ul>
-                <li>Click "Start Camera" to begin face detection</li>
-                <li>The system expects exactly <strong>1 person</strong> on screen</li>
-                <li>Try moving in and out of frame, or having multiple people in view</li>
-                <li>Enable debug mode to see face detection rectangles</li>
-                <li>Check the log below for detailed event information</li>
-            </ul>
+      <h1>Face Detector Demo</h1>
+
+      <div class="instructions">
+        <h3>Instructions:</h3>
+        <ul>
+          <li>Click "Start Camera" to begin face detection</li>
+          <li>
+            The system expects exactly <strong>1 person</strong> on screen
+          </li>
+          <li>
+            Try moving in and out of frame, or having multiple people in view
+          </li>
+          <li>Enable debug mode to see face detection rectangles</li>
+          <li>Check the log below for detailed event information</li>
+        </ul>
+      </div>
+
+      <div class="demo-section">
+        <div class="camera-container" id="cameraDiv">
+          <div class="placeholder-text">Camera will appear here</div>
         </div>
 
-        <div class="demo-section">
-            <div class="camera-container" id="cameraDiv">
-                <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: white; font-size: 18px;">
-                    Camera will appear here
-                </div>
-            </div>
+        <div class="controls">
+          <div class="status" id="status">Ready to start</div>
 
-            <div class="controls">
-                <div class="status" id="status">Ready to start</div>
-                
-                <button id="startBtn" class="btn-primary">Start Camera</button>
-                <button id="stopBtn" class="btn-danger" disabled>Stop Camera</button>
-                
-                <hr>
-                
-                <label>
-                    <input type="checkbox" id="debugToggle"> Debug Mode (Show rectangles)
-                </label>
-                
-                <hr>
-                
-                <h4>Event Log:</h4>
-                <div class="log" id="eventLog"></div>
-                <button id="clearLogBtn" class="btn-secondary">Clear Log</button>
-            </div>
+          <button id="startBtn" class="btn-primary">Start Camera</button>
+          <button id="stopBtn" class="btn-danger" disabled>Stop Camera</button>
+
+          <hr />
+
+          <label>
+            <input type="checkbox" id="debugToggle" /> Debug Mode (Show
+            rectangles)
+          </label>
+
+          <hr />
+
+          <h4>Event Log:</h4>
+          <div class="log" id="eventLog"></div>
+          <button id="clearLogBtn" class="btn-secondary">Clear Log</button>
         </div>
+      </div>
     </div>
 
-    <script src="face-detector.js"></script>
     <script>
-        class Demo {
-            constructor() {
-                this.detector = new FaceDetector();
-                this.isRunning = false;
-                this.initializeElements();
-                this.setupEventListeners();
-                this.setupDetectorEvents();
-            }
-
-            initializeElements() {
-                this.startBtn = document.getElementById('startBtn');
-                this.stopBtn = document.getElementById('stopBtn');
-                this.debugToggle = document.getElementById('debugToggle');
-                this.status = document.getElementById('status');
-                this.eventLog = document.getElementById('eventLog');
-                this.clearLogBtn = document.getElementById('clearLogBtn');
-                this.cameraDiv = document.getElementById('cameraDiv');
-            }
-
-            setupEventListeners() {
-                this.startBtn.addEventListener('click', () => this.startCamera());
-                this.stopBtn.addEventListener('click', () => this.stopCamera());
-                this.clearLogBtn.addEventListener('click', () => this.clearLog());
-                
-                this.debugToggle.addEventListener('change', (e) => {
-                    if (this.isRunning) {
-                        this.log('Debug mode can only be changed when camera is stopped', 'warning');
-                        e.target.checked = !e.target.checked;
-                    }
-                });
-            }
-
-            setupDetectorEvents() {
-                this.detector.addEventListener('initialized', () => {
-                    this.log('Face detector initialized successfully', 'success');
-                });
-
-                this.detector.addEventListener('singlePerson', (event) => {
-                    this.updateStatus('✓ Single person detected', 'good');
-                    this.log(`✓ Single person detected (confidence: ${(event.detail.detection.categories[0]?.score * 100).toFixed(1)}%)`, 'success');
-                });
-
-                this.detector.addEventListener('noPerson', (event) => {
-                    this.updateStatus('⚠ No person detected', 'warning');
-                    this.log('⚠ No person detected on screen', 'warning');
-                });
-
-                this.detector.addEventListener('multiplePeople', (event) => {
-                    this.updateStatus(`✗ ${event.detail.count} people detected`, 'error');
-                    this.log(`✗ Multiple people detected: ${event.detail.count} people. Only 1 person should be on screen`, 'error');
-                });
-
-                this.detector.addEventListener('error', (event) => {
-                    this.updateStatus('Error occurred', 'error');
-                    this.log(`Error: ${event.detail.message}`, 'error');
-                });
-
-                this.detector.addEventListener('stopped', () => {
-                    this.log('Face detector stopped', 'info');
-                });
-            }
-
-            async startCamera() {
-                try {
-                    this.startBtn.disabled = true;
-                    this.updateStatus('Starting camera...', 'warning');
-                    
-                    const options = {
-                        debug: this.debugToggle.checked
-                    };
-
-                    await this.detector.init(this.cameraDiv, options);
-                    
-                    this.isRunning = true;
-                    this.startBtn.disabled = true;
-                    this.stopBtn.disabled = false;
-                    this.updateStatus('Camera started', 'good');
-                    this.log('Camera started successfully', 'success');
-                    
-                } catch (error) {
-                    this.startBtn.disabled = false;
-                    this.updateStatus('Failed to start camera', 'error');
-                    this.log(`Failed to start camera: ${error.message}`, 'error');
-                }
-            }
-
-            stopCamera() {
-                this.detector.stop();
-                this.isRunning = false;
-                this.startBtn.disabled = false;
-                this.stopBtn.disabled = true;
-                this.updateStatus('Camera stopped', 'warning');
-                this.log('Camera stopped', 'info');
-            }
-
-            updateStatus(message, type) {
-                this.status.textContent = message;
-                this.status.className = `status ${type}`;
-            }
-
-            log(message, type = 'info') {
-                const timestamp = new Date().toLocaleTimeString();
-                const entry = document.createElement('div');
-                entry.className = `log-entry ${type}`;
-                entry.textContent = `[${timestamp}] ${message}`;
-                
-                this.eventLog.appendChild(entry);
-                this.eventLog.scrollTop = this.eventLog.scrollHeight;
-            }
-
-            clearLog() {
-                this.eventLog.innerHTML = '';
-            }
+      class FaceDetector extends EventTarget {
+        constructor() {
+          super();
+          this.faceDetection = null;
+          this.camera = null;
+          this.canvas = null;
+          this.ctx = null;
+          this.debugMode = false;
+          this.isInitialized = false;
+          this.animationId = null;
         }
 
-        // Initialize demo when page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            new Demo();
-        });
+        async init(cameraDiv, options = {}) {
+          try {
+            this.debugMode = options.debug || false;
+
+            if (!cameraDiv) {
+              throw new Error("Camera div element is required");
+            }
+
+            // Initialize MediaPipe Face Detection
+            const { FaceDetector, FilesetResolver } = await import(
+              "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3"
+            );
+
+            // Initialize the wasm fileset
+            const vision = await FilesetResolver.forVisionTasks(
+              "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+            );
+
+            this.faceDetection = await FaceDetector.createFromOptions(vision, {
+              baseOptions: {
+                modelAssetPath:
+                  "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite",
+                delegate: "GPU",
+              },
+              runningMode: "VIDEO",
+            });
+
+            // Setup camera
+            await this.setupCamera(cameraDiv);
+
+            this.isInitialized = true;
+            this.dispatchEvent(new CustomEvent("initialized"));
+
+            // Start detection loop
+            this.startDetection();
+          } catch (error) {
+            this.dispatchEvent(
+              new CustomEvent("error", {
+                detail: { type: "initialization", message: error.message },
+              })
+            );
+          }
+        }
+
+        async setupCamera(cameraDiv) {
+          // Hide placeholder text
+          const placeholder = cameraDiv.querySelector(".placeholder-text");
+          if (placeholder) {
+            placeholder.style.display = "none";
+          }
+
+          // Create video element
+          this.camera = document.createElement("video");
+          this.camera.setAttribute("playsinline", "");
+          this.camera.setAttribute("autoplay", "");
+          this.camera.setAttribute("muted", "");
+
+          // Create canvas for debug mode
+          if (this.debugMode) {
+            this.canvas = document.createElement("canvas");
+            this.ctx = this.canvas.getContext("2d");
+          }
+
+          // Add elements to DOM
+          cameraDiv.appendChild(this.camera);
+          if (this.canvas) {
+            cameraDiv.appendChild(this.canvas);
+          }
+
+          // Get user media
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+              facingMode: "user",
+            },
+          });
+
+          this.camera.srcObject = stream;
+
+          return new Promise((resolve, reject) => {
+            this.camera.onloadedmetadata = () => {
+              this.camera
+                .play()
+                .then(() => {
+                  // Set canvas dimensions to match video
+                  if (this.canvas) {
+                    this.canvas.width = this.camera.videoWidth;
+                    this.canvas.height = this.camera.videoHeight;
+                  }
+                  resolve();
+                })
+                .catch(reject);
+            };
+
+            this.camera.onerror = (e) => {
+              reject(new Error("Failed to load video"));
+            };
+          });
+        }
+
+        startDetection() {
+          if (!this.isInitialized || !this.camera) return;
+
+          const detect = () => {
+            if (this.camera.readyState === 4) {
+              const startTimeMs = performance.now();
+              const detections = this.faceDetection.detectForVideo(
+                this.camera,
+                startTimeMs
+              );
+
+              this.processDetections(detections);
+            }
+
+            this.animationId = requestAnimationFrame(detect);
+          };
+
+          detect();
+        }
+
+        processDetections(detections) {
+          const faceCount = detections.detections.length;
+
+          // Clear previous debug drawings
+          if (this.debugMode && this.ctx) {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+          }
+
+          // Check person count and emit events
+          if (faceCount === 0) {
+            this.dispatchEvent(
+              new CustomEvent("noPerson", {
+                detail: {
+                  count: faceCount,
+                  message: "No person detected on screen",
+                },
+              })
+            );
+          } else if (faceCount > 1) {
+            this.dispatchEvent(
+              new CustomEvent("multiplePeople", {
+                detail: {
+                  count: faceCount,
+                  message: `${faceCount} people detected. Only 1 person should be on screen`,
+                },
+              })
+            );
+          } else {
+            // Exactly 1 person - this is good
+            this.dispatchEvent(
+              new CustomEvent("singlePerson", {
+                detail: {
+                  count: faceCount,
+                  detection: detections.detections[0],
+                },
+              })
+            );
+          }
+
+          // Draw debug rectangles if debug mode is enabled
+          if (this.debugMode && this.ctx && faceCount > 0) {
+            this.drawFaceRectangles(detections.detections);
+          }
+
+          // Always emit detection event with raw data
+          this.dispatchEvent(
+            new CustomEvent("detection", {
+              detail: { detections: detections.detections, count: faceCount },
+            })
+          );
+        }
+
+        drawFaceRectangles(detections) {
+          this.ctx.strokeStyle = "#00FF00";
+          this.ctx.lineWidth = 3;
+          this.ctx.font = "16px Arial";
+          this.ctx.fillStyle = "#00FF00";
+
+          detections.forEach((detection, index) => {
+            const bbox = detection.boundingBox;
+
+            // Convert normalized coordinates to canvas coordinates
+            const x = bbox.originX * this.canvas.width;
+            const y = bbox.originY * this.canvas.height;
+            const width = bbox.width * this.canvas.width;
+            const height = bbox.height * this.canvas.height;
+
+            // Draw rectangle
+            this.ctx.strokeRect(x, y, width, height);
+
+            // Draw label
+            const confidence = (detection.categories[0]?.score * 100).toFixed(
+              1
+            );
+            this.ctx.fillText(`Face ${index + 1} (${confidence}%)`, x, y - 5);
+          });
+        }
+
+        stop() {
+          if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+          }
+
+          if (this.camera && this.camera.srcObject) {
+            const tracks = this.camera.srcObject.getTracks();
+            tracks.forEach((track) => track.stop());
+          }
+
+          // Show placeholder text again
+          const cameraDiv = this.camera?.parentElement;
+          if (cameraDiv) {
+            const placeholder = cameraDiv.querySelector(".placeholder-text");
+            if (placeholder) {
+              placeholder.style.display = "block";
+            }
+          }
+
+          this.isInitialized = false;
+          this.dispatchEvent(new CustomEvent("stopped"));
+        }
+
+        destroy() {
+          this.stop();
+
+          if (this.camera) {
+            this.camera.remove();
+          }
+
+          if (this.canvas) {
+            this.canvas.remove();
+          }
+
+          this.faceDetection = null;
+          this.camera = null;
+          this.canvas = null;
+          this.ctx = null;
+        }
+      }
+
+      class Demo {
+        constructor() {
+          this.detector = new FaceDetector();
+          this.isRunning = false;
+          this.initializeElements();
+          this.setupEventListeners();
+          this.setupDetectorEvents();
+        }
+
+        initializeElements() {
+          this.startBtn = document.getElementById("startBtn");
+          this.stopBtn = document.getElementById("stopBtn");
+          this.debugToggle = document.getElementById("debugToggle");
+          this.status = document.getElementById("status");
+          this.eventLog = document.getElementById("eventLog");
+          this.clearLogBtn = document.getElementById("clearLogBtn");
+          this.cameraDiv = document.getElementById("cameraDiv");
+        }
+
+        setupEventListeners() {
+          this.startBtn.addEventListener("click", () => this.startCamera());
+          this.stopBtn.addEventListener("click", () => this.stopCamera());
+          this.clearLogBtn.addEventListener("click", () => this.clearLog());
+
+          this.debugToggle.addEventListener("change", (e) => {
+            if (this.isRunning) {
+              this.log(
+                "Debug mode can only be changed when camera is stopped",
+                "warning"
+              );
+              e.target.checked = !e.target.checked;
+            }
+          });
+        }
+
+        setupDetectorEvents() {
+          this.detector.addEventListener("initialized", () => {
+            this.log("Face detector initialized successfully", "success");
+          });
+
+          this.detector.addEventListener("singlePerson", (event) => {
+            this.updateStatus("✓ Single person detected", "good");
+            this.log(
+              `✓ Single person detected (confidence: ${(
+                event.detail.detection.categories[0]?.score * 100
+              ).toFixed(1)}%)`,
+              "success"
+            );
+          });
+
+          this.detector.addEventListener("noPerson", (event) => {
+            this.updateStatus("⚠ No person detected", "warning");
+            this.log("⚠ No person detected on screen", "warning");
+          });
+
+          this.detector.addEventListener("multiplePeople", (event) => {
+            this.updateStatus(
+              `✗ ${event.detail.count} people detected`,
+              "error"
+            );
+            this.log(
+              `✗ Multiple people detected: ${event.detail.count} people. Only 1 person should be on screen`,
+              "error"
+            );
+          });
+
+          this.detector.addEventListener("error", (event) => {
+            this.updateStatus("Error occurred", "error");
+            this.log(`Error: ${event.detail.message}`, "error");
+          });
+
+          this.detector.addEventListener("stopped", () => {
+            this.log("Face detector stopped", "info");
+          });
+        }
+
+        async startCamera() {
+          try {
+            this.startBtn.disabled = true;
+            this.updateStatus("Starting camera...", "warning");
+
+            const options = {
+              debug: this.debugToggle.checked,
+            };
+
+            await this.detector.init(this.cameraDiv, options);
+
+            this.isRunning = true;
+            this.startBtn.disabled = true;
+            this.stopBtn.disabled = false;
+            this.updateStatus("Camera started", "good");
+            this.log("Camera started successfully", "success");
+          } catch (error) {
+            this.startBtn.disabled = false;
+            this.updateStatus("Failed to start camera", "error");
+            this.log(`Failed to start camera: ${error.message}`, "error");
+          }
+        }
+
+        stopCamera() {
+          this.detector.stop();
+          this.isRunning = false;
+          this.startBtn.disabled = false;
+          this.stopBtn.disabled = true;
+          this.updateStatus("Camera stopped", "warning");
+          this.log("Camera stopped", "info");
+        }
+
+        updateStatus(message, type) {
+          this.status.textContent = message;
+          this.status.className = `status ${type}`;
+        }
+
+        log(message, type = "info") {
+          const timestamp = new Date().toLocaleTimeString();
+          const entry = document.createElement("div");
+          entry.className = `log-entry ${type}`;
+          entry.textContent = `[${timestamp}] ${message}`;
+
+          this.eventLog.appendChild(entry);
+          this.eventLog.scrollTop = this.eventLog.scrollHeight;
+        }
+
+        clearLog() {
+          this.eventLog.innerHTML = "";
+        }
+      }
+
+      // Initialize demo when page loads
+      document.addEventListener("DOMContentLoaded", () => {
+        new Demo();
+      });
     </script>
-</body>
+  </body>
 </html>
