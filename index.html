@@ -173,6 +173,26 @@
                 </h6>
 
                 <div class="control-row">
+                  <label class="form-label">Sensitivity Mode</label>
+                  <select class="form-select" id="sensitivityMode">
+                    <option value="strict">
+                      Strict - Precise alignment required
+                    </option>
+                    <option value="medium" selected>
+                      Medium - Balanced sensitivity
+                    </option>
+                    <option value="relaxed">
+                      Relaxed - Forgiving detection
+                    </option>
+                    <option value="manual">Manual - Custom thresholds</option>
+                  </select>
+                  <small class="text-muted"
+                    >Presets automatically adjust gaze detection
+                    thresholds</small
+                  >
+                </div>
+
+                <div class="control-row">
                   <label class="form-label">Horizontal</label>
                   <div class="d-flex align-items-center">
                     <input
@@ -505,6 +525,38 @@
           }
         });
 
+      // Sensitivity mode dropdown
+      document
+        .getElementById("sensitivityMode")
+        .addEventListener("change", (e) => {
+          const mode = e.target.value;
+          gazer.setSensitivityMode(mode);
+
+          // Update UI to reflect the preset values if not manual
+          if (mode !== "manual") {
+            const selectedMode = gazer.sensitivityPresets[mode];
+
+            if (selectedMode) {
+              // Update sliders to show the preset values
+              document.getElementById("horizontalThreshold").value =
+                selectedMode.horizontalThreshold;
+              document.getElementById("horizontalValue").textContent =
+                selectedMode.horizontalThreshold;
+
+              document.getElementById("verticalThreshold").value =
+                selectedMode.verticalThreshold;
+              document.getElementById("verticalValue").textContent =
+                selectedMode.verticalThreshold;
+
+              document.getElementById("gazeHistorySize").value =
+                selectedMode.gazeHistorySize;
+              document.getElementById(
+                "gazeHistoryValue"
+              ).textContent = `${selectedMode.gazeHistorySize} frames`;
+            }
+          }
+        });
+
       document.getElementById("fpsControl").addEventListener("input", (e) => {
         document.getElementById(
           "fpsValue"
@@ -531,6 +583,8 @@
           document.getElementById("horizontalValue").textContent =
             e.target.value;
           gazer.setHorizontalThreshold(e.target.value);
+          // Switch to manual mode when user adjusts gaze controls
+          document.getElementById("sensitivityMode").value = "manual";
         });
 
       document
@@ -538,6 +592,8 @@
         .addEventListener("input", (e) => {
           document.getElementById("verticalValue").textContent = e.target.value;
           gazer.setVerticalThreshold(e.target.value);
+          // Switch to manual mode when user adjusts gaze controls
+          document.getElementById("sensitivityMode").value = "manual";
         });
 
       document
@@ -547,6 +603,8 @@
             "gazeHistoryValue"
           ).textContent = `${e.target.value} frames`;
           gazer.setGazeHistorySize(e.target.value);
+          // Switch to manual mode when user adjusts gaze controls
+          document.getElementById("sensitivityMode").value = "manual";
         });
 
       // Checkbox controls

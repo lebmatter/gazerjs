@@ -34,10 +34,35 @@ class Gazer {
       }
     };
 
+    // Gaze sensitivity presets
+    this.sensitivityPresets = {
+      strict: {
+        horizontalThreshold: 0.2,
+        verticalThreshold: 0.1,
+        gazeHistorySize: 3,
+        description: "Strict detection - Requires precise gaze alignment"
+      },
+      medium: {
+        horizontalThreshold: 0.3,
+        verticalThreshold: 0.15,
+        gazeHistorySize: 5,
+        description: "Balanced sensitivity - Recommended for most users"
+      },
+      relaxed: {
+        horizontalThreshold: 0.5,
+        verticalThreshold: 0.25,
+        gazeHistorySize: 7,
+        description: "Relaxed detection - More forgiving gaze tracking"
+      }
+    };
+
     // Default configuration
     this.config = {
       // Performance mode (low, medium, high, or null for manual)
       performanceMode: "medium",
+      
+      // Gaze sensitivity mode (strict, medium, relaxed, or null for manual)
+      sensitivityMode: "medium",
       
       // Performance settings
       targetFps: 15,
@@ -82,6 +107,9 @@ class Gazer {
 
     // Apply performance mode if specified
     this.applyPerformanceMode(options);
+    
+    // Apply sensitivity mode if specified
+    this.applySensitivityMode(options);
 
     // Get video element
     this.video = document.getElementById(videoElementId);
@@ -141,6 +169,34 @@ class Gazer {
         
         this.log(`Applied performance mode "${mode}": ${preset.description}`, "success");
         this.log(`Settings - FPS: ${preset.targetFps}, Frame Skip: ${preset.frameSkip}, Pause on Idle: ${preset.pauseOnIdle}, Reduced Canvas: ${preset.reducedCanvas}`, "info");
+      }
+    }
+  }
+
+  // Apply sensitivity mode settings
+  applySensitivityMode(userOptions = {}) {
+    const mode = this.config.sensitivityMode;
+    
+    if (mode && this.sensitivityPresets[mode]) {
+      const preset = this.sensitivityPresets[mode];
+      
+      // Check for manual overrides and warn if conflicts exist
+      const manualSettings = ['horizontalThreshold', 'verticalThreshold', 'gazeHistorySize'];
+      const hasManualOverrides = manualSettings.some(setting => 
+        userOptions.hasOwnProperty(setting)
+      );
+      
+      if (hasManualOverrides) {
+        this.log(`Sensitivity mode "${mode}" selected, but manual gaze settings detected. Manual settings will take precedence.`, "warning");
+        this.log(`Sensitivity mode "${mode}": ${preset.description}`, "info");
+      } else {
+        // Apply preset settings
+        this.config.horizontalThreshold = preset.horizontalThreshold;
+        this.config.verticalThreshold = preset.verticalThreshold;
+        this.config.gazeHistorySize = preset.gazeHistorySize;
+        
+        this.log(`Applied sensitivity mode "${mode}": ${preset.description}`, "success");
+        this.log(`Settings - Horizontal: ${preset.horizontalThreshold}, Vertical: ${preset.verticalThreshold}, Smoothing: ${preset.gazeHistorySize} frames`, "info");
       }
     }
   }
@@ -807,6 +863,31 @@ class Gazer {
     this.log(`New settings - FPS: ${preset.targetFps}, Frame Skip: ${preset.frameSkip}, Pause on Idle: ${preset.pauseOnIdle}, Reduced Canvas: ${preset.reducedCanvas}`, "info");
   }
 
+  // Set sensitivity mode
+  setSensitivityMode(mode) {
+    if (!mode || mode === "manual") {
+      this.config.sensitivityMode = null;
+      this.log("Sensitivity mode set to manual - use individual gaze controls", "info");
+      return;
+    }
+    
+    if (!this.sensitivityPresets[mode]) {
+      this.log(`Unknown sensitivity mode "${mode}". Available modes: ${Object.keys(this.sensitivityPresets).join(', ')}`, "error");
+      return;
+    }
+    
+    this.config.sensitivityMode = mode;
+    const preset = this.sensitivityPresets[mode];
+    
+    // Apply preset settings
+    this.config.horizontalThreshold = preset.horizontalThreshold;
+    this.config.verticalThreshold = preset.verticalThreshold;
+    this.config.gazeHistorySize = preset.gazeHistorySize;
+    
+    this.log(`Sensitivity mode changed to "${mode}": ${preset.description}`, "success");
+    this.log(`New settings - Horizontal: ${preset.horizontalThreshold}, Vertical: ${preset.verticalThreshold}, Smoothing: ${preset.gazeHistorySize} frames`, "info");
+  }
+
   // Get available performance modes
   getPerformanceModes() {
     return Object.keys(this.performancePresets).map(mode => ({
@@ -816,10 +897,20 @@ class Gazer {
     }));
   }
 
+  // Get available sensitivity modes
+  getSensitivityModes() {
+    return Object.keys(this.sensitivityPresets).map(mode => ({
+      value: mode,
+      label: mode.charAt(0).toUpperCase() + mode.slice(1),
+      description: this.sensitivityPresets[mode].description
+    }));
+  }
+
   // Batch update method for multiple settings
   updateSettings(settings) {
     const validSettings = {
       performanceMode: (val) => this.setPerformanceMode(val),
+      sensitivityMode: (val) => this.setSensitivityMode(val),
       targetFps: (val) => this.setFrameRate(val),
       frameSkip: (val) => this.setFrameSkip(val),
       pauseOnIdle: (val) => this.setPauseOnIdle(val),
