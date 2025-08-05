@@ -410,12 +410,12 @@
 
           indicator.className = "alert text-center mb-4";
 
-          if (gazeState === "looking-at-screen") {
+          if (gazeState === "screen") {
             indicator.classList.add("alert-success");
             icon.className = "bi bi-eye-fill fs-4 me-2";
             indicator.innerHTML =
               '<i class="bi bi-eye-fill fs-4 me-2"></i><strong>Gaze: Looking at Screen</strong>';
-          } else if (gazeState === "looking-away") {
+          } else if (gazeState === "away") {
             indicator.classList.add("alert-warning");
             icon.className = "bi bi-eye-slash-fill fs-4 me-2";
             indicator.innerHTML =
