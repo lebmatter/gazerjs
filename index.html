@@ -257,16 +257,6 @@
                   >
                 </div>
               </div>
-
-              <!-- Camera Controls -->
-              <div class="d-grid gap-2">
-                <button id="startBtn" class="btn btn-success btn-lg">
-                  <i class="bi bi-play-fill me-2"></i>Start Camera
-                </button>
-                <button id="stopBtn" class="btn btn-danger btn-lg" disabled>
-                  <i class="bi bi-stop-fill me-2"></i>Stop Camera
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -282,6 +272,15 @@
             <div class="card-body d-flex flex-column">
               <div class="video-wrapper mb-3">
                 <video id="video" autoplay muted playsinline></video>
+              </div>
+              <!-- Camera Controls -->
+              <div class="d-grid gap-2">
+                <button id="startBtn" class="btn btn-success btn-lg">
+                  <i class="bi bi-play-fill me-2"></i>Start Camera
+                </button>
+                <button id="stopBtn" class="btn btn-danger btn-lg" disabled>
+                  <i class="bi bi-stop-fill me-2"></i>Stop Camera
+                </button>
               </div>
             </div>
           </div>
@@ -364,28 +363,6 @@
                       <div class="fw-bold" id="canvasUpdates">0</div>
                     </div>
                   </div>
-                </div>
-              </div>
-
-              <!-- Usage Example -->
-              <div class="card mt-4">
-                <div class="card-header">
-                  <h6 class="card-title mb-0">
-                    <i class="bi bi-code-slash me-2"></i>Usage Example
-                  </h6>
-                </div>
-                <div class="card-body">
-                  <pre class="small"><code>// Initialize Gazer
-const gazer = new Gazer('video', {
-  onGazeChange: (state, data) => {
-    console.log('Gaze:', state);
-  },
-  onStatsUpdate: (stats) => {
-    console.log('Stats:', stats);
-  }
-});
-
-gazer.start();</code></pre>
                 </div>
               </div>
             </div>
@@ -478,6 +455,7 @@ gazer.start();</code></pre>
         document.getElementById(
           "fpsValue"
         ).textContent = `${e.target.value} FPS`;
+        gazer.setFrameRate(e.target.value);
       });
 
       document
@@ -486,6 +464,7 @@ gazer.start();</code></pre>
           document.getElementById("frameSkipValue").textContent = `${
             e.target.value
           } frame${e.target.value > 1 ? "s" : ""}`;
+          gazer.setFrameSkip(e.target.value);
         });
 
       document
@@ -493,12 +472,14 @@ gazer.start();</code></pre>
         .addEventListener("input", (e) => {
           document.getElementById("horizontalValue").textContent =
             e.target.value;
+          gazer.setHorizontalThreshold(e.target.value);
         });
 
       document
         .getElementById("verticalThreshold")
         .addEventListener("input", (e) => {
           document.getElementById("verticalValue").textContent = e.target.value;
+          gazer.setVerticalThreshold(e.target.value);
         });
 
       document
@@ -507,9 +488,86 @@ gazer.start();</code></pre>
           document.getElementById(
             "gazeHistoryValue"
           ).textContent = `${e.target.value} frames`;
+          gazer.setGazeHistorySize(e.target.value);
         });
 
-      gazer.start();
+      // Checkbox controls
+      document.getElementById("pauseOnIdle").addEventListener("change", (e) => {
+        gazer.setPauseOnIdle(e.target.checked);
+      });
+
+      document
+        .getElementById("reducedCanvas")
+        .addEventListener("change", (e) => {
+          gazer.setReducedCanvas(e.target.checked);
+        });
+
+      document
+        .getElementById("showGazeVector")
+        .addEventListener("change", (e) => {
+          gazer.setShowGazeVector(e.target.checked);
+        });
+
+      document
+        .getElementById("showEyePoints")
+        .addEventListener("change", (e) => {
+          gazer.setShowEyePoints(e.target.checked);
+        });
+
+      document
+        .getElementById("showFaceRectangle")
+        .addEventListener("change", (e) => {
+          gazer.setShowFaceRectangle(e.target.checked);
+        });
+
+      document.getElementById("enableLogs").addEventListener("change", (e) => {
+        gazer.setEnableLogs(e.target.checked);
+      });
+
+      // Camera control buttons
+      const startBtn = document.getElementById("startBtn");
+      const stopBtn = document.getElementById("stopBtn");
+
+      startBtn.addEventListener("click", async () => {
+        try {
+          startBtn.disabled = true;
+          startBtn.innerHTML =
+            '<i class="bi bi-hourglass-split me-2"></i>Starting...';
+
+          await gazer.start();
+
+          startBtn.disabled = true;
+          stopBtn.disabled = false;
+          startBtn.innerHTML =
+            '<i class="bi bi-play-fill me-2"></i>Start Camera';
+        } catch (error) {
+          console.error("Failed to start camera:", error);
+          startBtn.disabled = false;
+          startBtn.innerHTML =
+            '<i class="bi bi-play-fill me-2"></i>Start Camera';
+          alert(
+            "Failed to start camera. Please check permissions and try again."
+          );
+        }
+      });
+
+      stopBtn.addEventListener("click", async () => {
+        try {
+          stopBtn.disabled = true;
+          stopBtn.innerHTML =
+            '<i class="bi bi-hourglass-split me-2"></i>Stopping...';
+
+          await gazer.stop();
+
+          startBtn.disabled = false;
+          stopBtn.disabled = true;
+          stopBtn.innerHTML = '<i class="bi bi-stop-fill me-2"></i>Stop Camera';
+        } catch (error) {
+          console.error("Failed to stop camera:", error);
+          stopBtn.disabled = false;
+          stopBtn.innerHTML = '<i class="bi bi-stop-fill me-2"></i>Stop Camera';
+        }
+      });
     </script>
   </body>
 </html>
