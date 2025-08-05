@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MediaPipe Face Detection with Gaze Tracking - Using Gazer.js</title>
+
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Bootstrap Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css"
+    />
+
+    <style>
+      /* Minimal custom styles */
+      .video-wrapper {
+        border: 2px solid #dee2e6;
+        border-radius: 0.375rem;
+        overflow: hidden;
+        background: #f8f9fa;
+      }
+
+      video {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+
+      .stat-card {
+        text-align: center;
+      }
+
+      .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        margin: 0;
+      }
+
+      .control-row {
+        margin-bottom: 1rem;
+      }
+
+      .range-display {
+        min-width: 70px;
+        text-align: right;
+        font-weight: bold;
+        color: #0d6efd;
+      }
+
+      .full-height {
+        min-height: 100vh;
+      }
+    </style>
+  </head>
+  <body class="bg-light">
+    <!-- Header -->
+    <div class="bg-primary text-white py-4 mb-4">
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col">
+            <h1 class="text-center mb-2">
+              MediaPipe Face Detection with Gaze Tracking
+            </h1>
+            <p class="text-center mb-0 text-white-50">
+              Powered by Gazer.js Library
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container-fluid">
+      <div class="row g-4">
+        <!-- Column 1: Controls -->
+        <div class="col-lg-4">
+          <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+              <h5 class="card-title mb-0">
+                <i class="bi bi-sliders me-2"></i>Controls
+              </h5>
+            </div>
+            <div class="card-body">
+              <!-- Performance Controls -->
+              <div class="mb-4">
+                <h6 class="text-muted mb-3">
+                  <i class="bi bi-lightning-charge me-2"></i>Performance
+                </h6>
+
+                <div class="control-row">
+                  <label class="form-label">Frame Rate</label>
+                  <div class="d-flex align-items-center">
+                    <input
+                      type="range"
+                      class="form-range me-3"
+                      id="fpsControl"
+                      min="5"
+                      max="30"
+                      value="15"
+                    />
+                    <span class="range-display" id="fpsValue">15 FPS</span>
+                  </div>
+                </div>
+
+                <div class="control-row">
+                  <label class="form-label">Process Every</label>
+                  <div class="d-flex align-items-center">
+                    <input
+                      type="range"
+                      class="form-range me-3"
+                      id="frameSkipControl"
+                      min="1"
+                      max="5"
+                      value="1"
+                    />
+                    <span class="range-display" id="frameSkipValue"
+                      >1 frame</span
+                    >
+                  </div>
+                </div>
+
+                <div class="form-check mb-2">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="pauseOnIdle"
+                    checked
+                  />
+                  <label class="form-check-label" for="pauseOnIdle"
+                    >Pause when idle</label
+                  >
+                </div>
+
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="reducedCanvas"
+                  />
+                  <label class="form-check-label" for="reducedCanvas"
+                    >Reduced canvas updates</label
+                  >
+                </div>
+              </div>
+
+              <!-- Gaze Controls -->
+              <div class="mb-4">
+                <h6 class="text-muted mb-3">
+                  <i class="bi bi-eye me-2"></i>Gaze Sensitivity
+                </h6>
+
+                <div class="control-row">
+                  <label class="form-label">Horizontal</label>
+                  <div class="d-flex align-items-center">
+                    <input
+                      type="range"
+                      class="form-range me-3"
+                      id="horizontalThreshold"
+                      min="0.1"
+                      max="1.0"
+                      step="0.1"
+                      value="0.3"
+                    />
+                    <span class="range-display" id="horizontalValue">0.3</span>
+                  </div>
+                </div>
+
+                <div class="control-row">
+                  <label class="form-label">Vertical</label>
+                  <div class="d-flex align-items-center">
+                    <input
+                      type="range"
+                      class="form-range me-3"
+                      id="verticalThreshold"
+                      min="0.05"
+                      max="0.5"
+                      step="0.05"
+                      value="0.15"
+                    />
+                    <span class="range-display" id="verticalValue">0.15</span>
+                  </div>
+                </div>
+
+                <div class="control-row">
+                  <label class="form-label">Smoothing</label>
+                  <div class="d-flex align-items-center">
+                    <input
+                      type="range"
+                      class="form-range me-3"
+                      id="gazeHistorySize"
+                      min="2"
+                      max="10"
+                      value="5"
+                    />
+                    <span class="range-display" id="gazeHistoryValue"
+                      >5 frames</span
+                    >
+                  </div>
+                </div>
+
+                <div class="form-check mb-2">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="showGazeVector"
+                    checked
+                  />
+                  <label class="form-check-label" for="showGazeVector"
+                    >Show gaze direction</label
+                  >
+                </div>
+
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="showEyePoints"
+                    checked
+                  />
+                  <label class="form-check-label" for="showEyePoints"
+                    >Show eye tracking</label
+                  >
+                </div>
+              </div>
+
+              <!-- Display Options -->
+              <div class="mb-4">
+                <h6 class="text-muted mb-3">
+                  <i class="bi bi-palette me-2"></i>Display Options
+                </h6>
+
+                <div class="form-check mb-2">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="showFaceRectangle"
+                    checked
+                  />
+                  <label class="form-check-label" for="showFaceRectangle"
+                    >Show face rectangle</label
+                  >
+                </div>
+
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="enableLogs"
+                    checked
+                  />
+                  <label class="form-check-label" for="enableLogs"
+                    >Enable console logs</label
+                  >
+                </div>
+              </div>
+
+              <!-- Camera Controls -->
+              <div class="d-grid gap-2">
+                <button id="startBtn" class="btn btn-success btn-lg">
+                  <i class="bi bi-play-fill me-2"></i>Start Camera
+                </button>
+                <button id="stopBtn" class="btn btn-danger btn-lg" disabled>
+                  <i class="bi bi-stop-fill me-2"></i>Stop Camera
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Column 2: Video -->
+        <div class="col-lg-4">
+          <div class="card h-100">
+            <div class="card-header bg-success text-white">
+              <h5 class="card-title mb-0">
+                <i class="bi bi-camera-video me-2"></i>Live Feed
+              </h5>
+            </div>
+            <div class="card-body d-flex flex-column">
+              <div class="video-wrapper mb-3">
+                <video id="video" autoplay muted playsinline></video>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Column 3: Stats & Output -->
+        <div class="col-lg-4">
+          <div class="card h-100">
+            <div class="card-header bg-info text-white">
+              <h5 class="card-title mb-0">
+                <i class="bi bi-graph-up me-2"></i>Stats & Output
+              </h5>
+            </div>
+            <div class="card-body">
+              <!-- Gaze Indicator -->
+              <div
+                class="alert alert-secondary text-center mb-4"
+                role="alert"
+                id="gazeIndicator"
+              >
+                <i class="bi bi-eye fs-4 me-2"></i>
+                <strong>Gaze: Unknown</strong>
+              </div>
+
+              <!-- Main Stats -->
+              <div class="row g-3 mb-4">
+                <div class="col-6">
+                  <div class="card stat-card bg-primary text-white">
+                    <div class="card-body">
+                      <p class="stat-value" id="faceCount">0</p>
+                      <small>Faces Detected</small>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="card stat-card bg-warning text-dark">
+                    <div class="card-body">
+                      <p class="stat-value" id="awayTime">0s</p>
+                      <small>Time Away</small>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="card stat-card bg-danger text-white">
+                    <div class="card-body">
+                      <p class="stat-value" id="distractedTime">0s</p>
+                      <small>Time Distracted</small>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="card stat-card bg-success text-white">
+                    <div class="card-body">
+                      <p class="stat-value" id="confidence">0%</p>
+                      <small>Avg Confidence</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Performance Stats -->
+              <div class="card">
+                <div class="card-header">
+                  <h6 class="card-title mb-0">
+                    <i class="bi bi-speedometer2 me-2"></i>Performance
+                  </h6>
+                </div>
+                <div class="card-body">
+                  <div class="row text-center">
+                    <div class="col-4">
+                      <div class="text-muted small">Processing FPS</div>
+                      <div class="fw-bold" id="processingFps">0</div>
+                    </div>
+                    <div class="col-4">
+                      <div class="text-muted small">Frames Skipped</div>
+                      <div class="fw-bold" id="framesSkipped">0</div>
+                    </div>
+                    <div class="col-4">
+                      <div class="text-muted small">Canvas Updates</div>
+                      <div class="fw-bold" id="canvasUpdates">0</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Usage Example -->
+              <div class="card mt-4">
+                <div class="card-header">
+                  <h6 class="card-title mb-0">
+                    <i class="bi bi-code-slash me-2"></i>Usage Example
+                  </h6>
+                </div>
+                <div class="card-body">
+                  <pre class="small"><code>// Initialize Gazer
+const gazer = new Gazer('video', {
+  onGazeChange: (state, data) => {
+    console.log('Gaze:', state);
+  },
+  onStatsUpdate: (stats) => {
+    console.log('Stats:', stats);
+  }
+});
+
+gazer.start();</code></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- MediaPipe Scripts -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"
+      crossorigin="anonymous"
+    ></script>
+
+    <!-- Include Gazer.js Library -->
+    <script src="gazer.js"></script>
+    <script>
+      const gazer = new Gazer("video", {
+        onGazeChange: (gazeState, gazeData) => {
+          console.log("Gaze changed to:", gazeState);
+
+          // Update gaze indicator
+          const indicator = document.getElementById("gazeIndicator");
+          const icon = indicator.querySelector("i");
+
+          indicator.className = "alert text-center mb-4";
+
+          if (gazeState === "looking-at-screen") {
+            indicator.classList.add("alert-success");
+            icon.className = "bi bi-eye-fill fs-4 me-2";
+            indicator.innerHTML =
+              '<i class="bi bi-eye-fill fs-4 me-2"></i><strong>Gaze: Looking at Screen</strong>';
+          } else if (gazeState === "looking-away") {
+            indicator.classList.add("alert-warning");
+            icon.className = "bi bi-eye-slash-fill fs-4 me-2";
+            indicator.innerHTML =
+              '<i class="bi bi-eye-slash-fill fs-4 me-2"></i><strong>Gaze: Looking Away</strong>';
+          } else {
+            indicator.classList.add("alert-secondary");
+            indicator.innerHTML =
+              '<i class="bi bi-question-circle fs-4 me-2"></i><strong>Gaze: Unknown</strong>';
+          }
+        },
+        onStatsUpdate: (stats) => {
+          // Update stats
+          document.getElementById("faceCount").textContent =
+            stats.faceCount || 0;
+          document.getElementById("awayTime").textContent = `${
+            stats.awayTime || 0
+          }s`;
+          document.getElementById("distractedTime").textContent = `${
+            stats.distractedTime || 0
+          }s`;
+          document.getElementById("confidence").textContent = `${Math.round(
+            (stats.confidence || 0) * 100
+          )}%`;
+
+          // Update performance stats
+          document.getElementById("processingFps").textContent = Math.round(
+            stats.processingFps || 0
+          );
+          document.getElementById("framesSkipped").textContent =
+            stats.framesSkipped || 0;
+          document.getElementById("canvasUpdates").textContent =
+            stats.canvasUpdates || 0;
+        },
+      });
+
+      // Control handlers
+      document.getElementById("fpsControl").addEventListener("input", (e) => {
+        document.getElementById(
+          "fpsValue"
+        ).textContent = `${e.target.value} FPS`;
+      });
+
+      document
+        .getElementById("frameSkipControl")
+        .addEventListener("input", (e) => {
+          document.getElementById("frameSkipValue").textContent = `${
+            e.target.value
+          } frame${e.target.value > 1 ? "s" : ""}`;
+        });
+
+      document
+        .getElementById("horizontalThreshold")
+        .addEventListener("input", (e) => {
+          document.getElementById("horizontalValue").textContent =
+            e.target.value;
+        });
+
+      document
+        .getElementById("verticalThreshold")
+        .addEventListener("input", (e) => {
+          document.getElementById("verticalValue").textContent = e.target.value;
+        });
+
+      document
+        .getElementById("gazeHistorySize")
+        .addEventListener("input", (e) => {
+          document.getElementById(
+            "gazeHistoryValue"
+          ).textContent = `${e.target.value} frames`;
+        });
+
+      gazer.start();
+    </script>
+  </body>
+</html>
