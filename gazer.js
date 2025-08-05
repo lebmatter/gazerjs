@@ -9,8 +9,36 @@
 
 class Gazer {
   constructor(videoElementId, options = {}) {
+    // Performance mode presets
+    this.performancePresets = {
+      low: {
+        targetFps: 10,
+        frameSkip: 3,
+        pauseOnIdle: true,
+        reducedCanvas: true,
+        description: "Low CPU usage - Basic tracking"
+      },
+      medium: {
+        targetFps: 15,
+        frameSkip: 2,
+        pauseOnIdle: true,
+        reducedCanvas: false,
+        description: "Balanced performance - Recommended"
+      },
+      high: {
+        targetFps: 25,
+        frameSkip: 1,
+        pauseOnIdle: false,
+        reducedCanvas: false,
+        description: "High performance - Smooth tracking"
+      }
+    };
+
     // Default configuration
     this.config = {
+      // Performance mode (low, medium, high, or null for manual)
+      performanceMode: "medium",
+      
       // Performance settings
       targetFps: 15,
       frameSkip: 1,
@@ -52,6 +80,9 @@ class Gazer {
       ...options
     };
 
+    // Apply performance mode if specified
+    this.applyPerformanceMode(options);
+
     // Get video element
     this.video = document.getElementById(videoElementId);
     if (!this.video) {
@@ -83,6 +114,35 @@ class Gazer {
     this.video.parentNode.insertBefore(canvas, this.video.nextSibling);
     
     return canvas;
+  }
+
+  // Apply performance mode settings
+  applyPerformanceMode(userOptions = {}) {
+    const mode = this.config.performanceMode;
+    
+    if (mode && this.performancePresets[mode]) {
+      const preset = this.performancePresets[mode];
+      
+      // Check for manual overrides and warn if conflicts exist
+      const manualSettings = ['targetFps', 'frameSkip', 'pauseOnIdle', 'reducedCanvas'];
+      const hasManualOverrides = manualSettings.some(setting => 
+        userOptions.hasOwnProperty(setting)
+      );
+      
+      if (hasManualOverrides) {
+        this.log(`Performance mode "${mode}" selected, but manual settings detected. Manual settings will take precedence.`, "warning");
+        this.log(`Performance mode "${mode}": ${preset.description}`, "info");
+      } else {
+        // Apply preset settings
+        this.config.targetFps = preset.targetFps;
+        this.config.frameSkip = preset.frameSkip;
+        this.config.pauseOnIdle = preset.pauseOnIdle;
+        this.config.reducedCanvas = preset.reducedCanvas;
+        
+        this.log(`Applied performance mode "${mode}": ${preset.description}`, "success");
+        this.log(`Settings - FPS: ${preset.targetFps}, Frame Skip: ${preset.frameSkip}, Pause on Idle: ${preset.pauseOnIdle}, Reduced Canvas: ${preset.reducedCanvas}`, "info");
+      }
+    }
   }
 
   // Update canvas size to match video display size
@@ -721,9 +781,45 @@ class Gazer {
     this.log(`Console logging ${enabled ? 'enabled' : 'disabled'}`, "info");
   }
 
+  // Set performance mode
+  setPerformanceMode(mode) {
+    if (!mode || mode === "manual") {
+      this.config.performanceMode = null;
+      this.log("Performance mode set to manual - use individual controls", "info");
+      return;
+    }
+    
+    if (!this.performancePresets[mode]) {
+      this.log(`Unknown performance mode "${mode}". Available modes: ${Object.keys(this.performancePresets).join(', ')}`, "error");
+      return;
+    }
+    
+    this.config.performanceMode = mode;
+    const preset = this.performancePresets[mode];
+    
+    // Apply preset settings
+    this.config.targetFps = preset.targetFps;
+    this.config.frameSkip = preset.frameSkip;
+    this.config.pauseOnIdle = preset.pauseOnIdle;
+    this.config.reducedCanvas = preset.reducedCanvas;
+    
+    this.log(`Performance mode changed to "${mode}": ${preset.description}`, "success");
+    this.log(`New settings - FPS: ${preset.targetFps}, Frame Skip: ${preset.frameSkip}, Pause on Idle: ${preset.pauseOnIdle}, Reduced Canvas: ${preset.reducedCanvas}`, "info");
+  }
+
+  // Get available performance modes
+  getPerformanceModes() {
+    return Object.keys(this.performancePresets).map(mode => ({
+      value: mode,
+      label: mode.charAt(0).toUpperCase() + mode.slice(1),
+      description: this.performancePresets[mode].description
+    }));
+  }
+
   // Batch update method for multiple settings
   updateSettings(settings) {
     const validSettings = {
+      performanceMode: (val) => this.setPerformanceMode(val),
       targetFps: (val) => this.setFrameRate(val),
       frameSkip: (val) => this.setFrameSkip(val),
       pauseOnIdle: (val) => this.setPauseOnIdle(val),

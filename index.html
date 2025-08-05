@@ -93,6 +93,24 @@
                 </h6>
 
                 <div class="control-row">
+                  <label class="form-label">Performance Mode</label>
+                  <select class="form-select" id="performanceMode">
+                    <option value="low">Low - Basic tracking (10 FPS)</option>
+                    <option value="medium" selected>
+                      Medium - Balanced (15 FPS)
+                    </option>
+                    <option value="high">
+                      High - Smooth tracking (25 FPS)
+                    </option>
+                    <option value="manual">Manual - Custom settings</option>
+                  </select>
+                  <small class="text-muted"
+                    >Presets automatically adjust frame rate and other
+                    settings</small
+                  >
+                </div>
+
+                <div class="control-row">
                   <label class="form-label">Frame Rate</label>
                   <div class="d-flex align-items-center">
                     <input
@@ -452,11 +470,48 @@
       });
 
       // Control handlers
+
+      // Performance mode dropdown
+      document
+        .getElementById("performanceMode")
+        .addEventListener("change", (e) => {
+          const mode = e.target.value;
+          gazer.setPerformanceMode(mode);
+
+          // Update UI to reflect the preset values if not manual
+          if (mode !== "manual") {
+            const modes = gazer.getPerformanceModes();
+            const selectedMode = gazer.performancePresets[mode];
+
+            if (selectedMode) {
+              // Update sliders to show the preset values
+              document.getElementById("fpsControl").value =
+                selectedMode.targetFps;
+              document.getElementById(
+                "fpsValue"
+              ).textContent = `${selectedMode.targetFps} FPS`;
+
+              document.getElementById("frameSkipControl").value =
+                selectedMode.frameSkip;
+              document.getElementById("frameSkipValue").textContent = `${
+                selectedMode.frameSkip
+              } frame${selectedMode.frameSkip > 1 ? "s" : ""}`;
+
+              document.getElementById("pauseOnIdle").checked =
+                selectedMode.pauseOnIdle;
+              document.getElementById("reducedCanvas").checked =
+                selectedMode.reducedCanvas;
+            }
+          }
+        });
+
       document.getElementById("fpsControl").addEventListener("input", (e) => {
         document.getElementById(
           "fpsValue"
         ).textContent = `${e.target.value} FPS`;
         gazer.setFrameRate(e.target.value);
+        // Switch to manual mode when user adjusts controls
+        document.getElementById("performanceMode").value = "manual";
       });
 
       document
@@ -466,6 +521,8 @@
             e.target.value
           } frame${e.target.value > 1 ? "s" : ""}`;
           gazer.setFrameSkip(e.target.value);
+          // Switch to manual mode when user adjusts controls
+          document.getElementById("performanceMode").value = "manual";
         });
 
       document
@@ -495,12 +552,16 @@
       // Checkbox controls
       document.getElementById("pauseOnIdle").addEventListener("change", (e) => {
         gazer.setPauseOnIdle(e.target.checked);
+        // Switch to manual mode when user adjusts controls
+        document.getElementById("performanceMode").value = "manual";
       });
 
       document
         .getElementById("reducedCanvas")
         .addEventListener("change", (e) => {
           gazer.setReducedCanvas(e.target.checked);
+          // Switch to manual mode when user adjusts controls
+          document.getElementById("performanceMode").value = "manual";
         });
 
       document
