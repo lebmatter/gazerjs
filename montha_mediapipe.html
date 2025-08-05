@@ -374,6 +374,15 @@
         </div>
       </div>
 
+      <!-- Display Controls -->
+      <div class="control-section">
+        <h3>🎨 Display Options</h3>
+        <div class="control-row">
+          <input type="checkbox" id="showFaceRectangle" checked />
+          <label>Show face rectangle</label>
+        </div>
+      </div>
+
       <div class="controls">
         <button id="startBtn">Start Camera</button>
         <button id="stopBtn" disabled>Stop Camera</button>
@@ -498,6 +507,7 @@
         gazeHistorySize: 5,
         showGazeVector: true,
         showEyePoints: true,
+        showFaceRectangle: true, // New configuration option
         idleTimeout: 3000, // 3 seconds
       };
 
@@ -540,6 +550,19 @@
           .getElementById("showEyePoints")
           .addEventListener("change", (e) => {
             config.showEyePoints = e.target.checked;
+          });
+
+        // New face rectangle checkbox
+        document
+          .getElementById("showFaceRectangle")
+          .addEventListener("change", (e) => {
+            config.showFaceRectangle = e.target.checked;
+            addLog(
+              `${config.showFaceRectangle ? "🟢" : "⭕"} Face rectangle ${
+                config.showFaceRectangle ? "enabled" : "disabled"
+              }`,
+              "info"
+            );
           });
 
         // Gaze threshold controls
@@ -793,8 +816,8 @@
           // Clear canvas
           ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-          // Draw detections
-          if (currentFaces.length > 0) {
+          // Draw detections only if face rectangle is enabled
+          if (currentFaces.length > 0 && config.showFaceRectangle) {
             drawFaces(currentFaces);
           }
           canvasUpdates++;
@@ -943,8 +966,11 @@
         }
       }
 
-      // Draw face detections (unchanged)
+      // Draw face detections (now conditional based on config)
       function drawFaces(faces) {
+        // Only draw if face rectangle is enabled
+        if (!config.showFaceRectangle) return;
+
         faces.forEach((detection, index) => {
           const bbox = detection.boundingBox || detection.bbox;
           if (!bbox) return;
