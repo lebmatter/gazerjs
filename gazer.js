@@ -76,11 +76,34 @@ class Gazer {
     canvas.style.left = "0";
     canvas.style.pointerEvents = "none";
     canvas.style.zIndex = "10";
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
     
     // Insert canvas after video element
     this.video.parentNode.insertBefore(canvas, this.video.nextSibling);
     
     return canvas;
+  }
+
+  // Update canvas size to match video display size
+  updateCanvasSize() {
+    if (!this.video || !this.canvas) return;
+    
+    // Wait for video to have dimensions
+    if (this.video.videoWidth === 0 || this.video.videoHeight === 0) {
+      setTimeout(() => this.updateCanvasSize(), 100);
+      return;
+    }
+    
+    // Set canvas internal dimensions to match video resolution
+    this.canvas.width = this.video.videoWidth;
+    this.canvas.height = this.video.videoHeight;
+    
+    // Reset transform to ensure proper scaling
+    this.canvas.style.transform = "none";
+    this.canvas.style.transformOrigin = "top left";
+    
+    this.log(`Canvas updated to ${this.canvas.width}x${this.canvas.height}`, "info");
   }
 
   initializeState() {
@@ -93,6 +116,9 @@ class Gazer {
     this.isRunning = false;
     this.isModelLoaded = false;
     this.isIdle = false;
+    
+    // Event listeners
+    this.resizeListener = null;
     
     // Tracking data
     this.currentFaces = [];
@@ -565,8 +591,15 @@ class Gazer {
 
       await this.camera.start();
 
-      this.canvas.width = this.config.cameraWidth;
-      this.canvas.height = this.config.cameraHeight;
+      // Set canvas size to match video
+      this.updateCanvasSize();
+      
+      // Add resize listener to keep canvas aligned
+      this.resizeListener = () => this.updateCanvasSize();
+      window.addEventListener('resize', this.resizeListener);
+      
+      // Also update canvas size when video metadata loads
+      this.video.addEventListener('loadedmetadata', this.resizeListener);
 
       this.isRunning = true;
       this.log("Camera started successfully", "success");
@@ -586,6 +619,13 @@ class Gazer {
     if (this.camera) {
       await this.camera.stop();
       this.camera = null;
+    }
+
+    // Remove event listeners
+    if (this.resizeListener) {
+      window.removeEventListener('resize', this.resizeListener);
+      this.video.removeEventListener('loadedmetadata', this.resizeListener);
+      this.resizeListener = null;
     }
 
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
