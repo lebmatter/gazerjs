@@ -435,9 +435,9 @@
           document.getElementById("distractedTime").textContent = `${
             stats.distractedTime || 0
           }s`;
-          document.getElementById("confidence").textContent = `${Math.round(
-            (stats.confidence || 0) * 100
-          )}%`;
+          document.getElementById("confidence").textContent = `${
+            stats.confidence || 0
+          }%`;
 
           // Update performance stats
           document.getElementById("processingFps").textContent = Math.round(
