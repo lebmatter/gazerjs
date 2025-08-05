@@ -240,34 +240,34 @@
                     >
                   </div>
                 </div>
-
-                <div class="form-check mb-2">
-                  <input
-                    class="form-check-input"
-                    type="checkbox"
-                    id="showGazeVector"
-                    checked
-                  />
-                  <label class="form-check-label" for="showGazeVector"
-                    >Show gaze direction</label
-                  >
-                </div>
-
-                <div class="form-check">
-                  <input
-                    class="form-check-input"
-                    type="checkbox"
-                    id="showEyePoints"
-                    checked
-                  />
-                  <label class="form-check-label" for="showEyePoints"
-                    >Show eye tracking</label
-                  >
-                </div>
               </div>
+            </div>
+          </div>
+        </div>
 
+        <!-- Column 2: Video -->
+        <div class="col-lg-4">
+          <div class="card h-100">
+            <div class="card-header bg-success text-white">
+              <h5 class="card-title mb-0">
+                <i class="bi bi-camera-video me-2"></i>Live Feed
+              </h5>
+            </div>
+            <div class="card-body d-flex flex-column">
+              <div class="video-wrapper mb-3">
+                <video id="video" autoplay muted playsinline></video>
+              </div>
+              <!-- Camera Controls -->
+              <div class="d-grid gap-2">
+                <button id="startBtn" class="btn btn-success btn-lg">
+                  <i class="bi bi-play-fill me-2"></i>Start Camera
+                </button>
+                <button id="stopBtn" class="btn btn-danger btn-lg" disabled>
+                  <i class="bi bi-stop-fill me-2"></i>Stop Camera
+                </button>
+              </div>
               <!-- Display Options -->
-              <div class="mb-4">
+              <div class="mb-4 mt-3">
                 <h6 class="text-muted mb-3">
                   <i class="bi bi-palette me-2"></i>Display Options
                 </h6>
@@ -295,31 +295,29 @@
                     >Enable console logs</label
                   >
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
+                <div class="form-check mb-2">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="showGazeVector"
+                    checked
+                  />
+                  <label class="form-check-label" for="showGazeVector"
+                    >Show gaze direction</label
+                  >
+                </div>
 
-        <!-- Column 2: Video -->
-        <div class="col-lg-4">
-          <div class="card h-100">
-            <div class="card-header bg-success text-white">
-              <h5 class="card-title mb-0">
-                <i class="bi bi-camera-video me-2"></i>Live Feed
-              </h5>
-            </div>
-            <div class="card-body d-flex flex-column">
-              <div class="video-wrapper mb-3">
-                <video id="video" autoplay muted playsinline></video>
-              </div>
-              <!-- Camera Controls -->
-              <div class="d-grid gap-2">
-                <button id="startBtn" class="btn btn-success btn-lg">
-                  <i class="bi bi-play-fill me-2"></i>Start Camera
-                </button>
-                <button id="stopBtn" class="btn btn-danger btn-lg" disabled>
-                  <i class="bi bi-stop-fill me-2"></i>Stop Camera
-                </button>
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="showEyePoints"
+                    checked
+                  />
+                  <label class="form-check-label" for="showEyePoints"
+                    >Show eye tracking</label
+                  >
+                </div>
               </div>
             </div>
           </div>
