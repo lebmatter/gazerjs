@@ -13,12 +13,15 @@ Gazer.js enables developers to easily integrate face detection and gaze tracking
 - 🎯 **Real-time Gaze Tracking** - Detect when users are looking at or away from the screen
 - 👤 **Face Detection** - Robust face detection with confidence scoring
 - 📊 **Attention Analytics** - Track attention time, distraction periods, and engagement metrics
-- 🎛️ **Highly Configurable** - 25+ configuration options for fine-tuning
+- 🚀 **Performance Modes** - Pre-configured Low/Medium/High performance settings for optimal CPU usage
+- 🎛️ **Sensitivity Modes** - Strict/Medium/Relaxed gaze detection presets for different use cases
+- ⚙️ **Highly Configurable** - 30+ configuration options with smart preset management
 - ⚡ **Performance Optimized** - Frame skipping, idle detection, and efficient canvas updates
 - 🔄 **Event-Driven** - Real-time callbacks for all major events
 - 🎨 **Visual Overlays** - Optional face rectangles, gaze vectors, and eye tracking indicators
 - 📱 **Browser Compatible** - Works in all modern browsers with webcam access
-- 🚀 **Easy Integration** - Drop-in solution with minimal setup required
+- �️ **Easy Integration** - Drop-in solution with minimal setup required
+- 🔧 **Smart Canvas Alignment** - Automatic canvas sizing and positioning for accurate overlays
 
 ## 🚀 Quick Start
 
@@ -43,7 +46,7 @@ Gazer.js enables developers to easily integrate face detection and gaze tracking
 ### 3. Initialize and Start
 
 ```javascript
-// Create Gazer instance
+// Simple initialization with defaults (Medium performance & sensitivity)
 const gazer = new Gazer('webcam', {
   onGazeChange: (gazeState, gazeData) => {
     console.log('Gaze direction:', gazeState); // 'screen', 'away', 'unknown'
@@ -53,8 +56,70 @@ const gazer = new Gazer('webcam', {
   }
 });
 
+// Advanced initialization with performance and sensitivity modes
+const gazer = new Gazer('webcam', {
+  performanceMode: 'high',        // 'low', 'medium', 'high'
+  sensitivityMode: 'strict',      // 'strict', 'medium', 'relaxed'
+  onGazeChange: (gazeState, gazeData) => {
+    console.log('Gaze direction:', gazeState);
+  }
+});
+
 // Start tracking
 await gazer.start();
+```
+
+## 🚀 Performance & Sensitivity Modes
+
+### Performance Modes
+Gazer.js includes three pre-configured performance modes for optimal CPU usage:
+
+```javascript
+// Low Performance - Basic tracking (10 FPS)
+const gazer = new Gazer('webcam', {
+  performanceMode: 'low'    // Best for low-end devices or battery saving
+});
+
+// Medium Performance - Balanced (15 FPS) - DEFAULT
+const gazer = new Gazer('webcam', {
+  performanceMode: 'medium' // Recommended for most applications
+});
+
+// High Performance - Smooth tracking (25 FPS)
+const gazer = new Gazer('webcam', {
+  performanceMode: 'high'   // Best for high-end devices requiring smooth tracking
+});
+```
+
+### Sensitivity Modes  
+Choose gaze detection sensitivity based on your use case:
+
+```javascript
+// Strict Sensitivity - Precise alignment required
+const gazer = new Gazer('webcam', {
+  sensitivityMode: 'strict'   // Best for focused work scenarios
+});
+
+// Medium Sensitivity - Balanced detection - DEFAULT
+const gazer = new Gazer('webcam', {
+  sensitivityMode: 'medium'   // Recommended for most users
+});
+
+// Relaxed Sensitivity - Forgiving detection
+const gazer = new Gazer('webcam', {
+  sensitivityMode: 'relaxed'  // Good for casual use or accessibility
+});
+```
+
+### Manual Override
+You can still use manual settings, but modes take precedence unless overridden:
+
+```javascript
+// This will use high performance mode settings
+const gazer = new Gazer('webcam', {
+  performanceMode: 'high',
+  targetFps: 10  // This will override the high mode's 25 FPS (with console warning)
+});
 ```
 
 ## 📖 API Reference
@@ -83,8 +148,46 @@ Stops the camera and pauses tracking.
 await gazer.stop();
 ```
 
+#### `setPerformanceMode(mode)`
+Changes performance mode at runtime.
+```javascript
+gazer.setPerformanceMode('high');  // 'low', 'medium', 'high', 'manual'
+```
+
+#### `setSensitivityMode(mode)`
+Changes sensitivity mode at runtime.
+```javascript
+gazer.setSensitivityMode('strict'); // 'strict', 'medium', 'relaxed', 'manual'
+```
+
+#### `getPerformanceModes()`
+Returns available performance modes.
+```javascript
+const modes = gazer.getPerformanceModes();
+// [{ value: 'low', label: 'Low', description: '...' }, ...]
+```
+
+#### `getSensitivityModes()`
+Returns available sensitivity modes.
+```javascript
+const modes = gazer.getSensitivityModes();
+// [{ value: 'strict', label: 'Strict', description: '...' }, ...]
+```
+
 #### `updateConfig(options)`
-Updates configuration in real-time.
+#### `updateSettings(settings)`
+Updates multiple settings at once, including modes.
+```javascript
+gazer.updateSettings({
+  performanceMode: 'high',
+  sensitivityMode: 'relaxed',
+  targetFps: 20,
+  showFaceRectangle: false
+});
+```
+
+#### `updateConfig(options)`
+Updates configuration in real-time (legacy method).
 ```javascript
 gazer.updateConfig({
   targetFps: 20,
@@ -121,7 +224,25 @@ gazer.destroy();
 
 ## ⚙️ Configuration Options
 
-### Performance Settings
+### Mode-Based Configuration (Recommended)
+```javascript
+{
+  performanceMode: 'medium',     // 'low', 'medium', 'high', null/manual
+  sensitivityMode: 'medium'      // 'strict', 'medium', 'relaxed', null/manual
+}
+```
+
+**Performance Mode Presets:**
+- `low`: 10 FPS, skip 3 frames, pause on idle, reduced canvas
+- `medium`: 15 FPS, skip 2 frames, pause on idle, normal canvas
+- `high`: 25 FPS, skip 1 frame, no pause, normal canvas
+
+**Sensitivity Mode Presets:**
+- `strict`: Horizontal 0.2, Vertical 0.1, Smoothing 3 frames
+- `medium`: Horizontal 0.3, Vertical 0.15, Smoothing 5 frames  
+- `relaxed`: Horizontal 0.5, Vertical 0.25, Smoothing 7 frames
+
+### Manual Performance Settings
 ```javascript
 {
   targetFps: 15,           // Target processing frame rate
@@ -132,7 +253,7 @@ gazer.destroy();
 }
 ```
 
-### Gaze Sensitivity
+### Manual Gaze Sensitivity
 ```javascript
 {
   horizontalThreshold: 0.3,  // Left/right gaze sensitivity (0.1-1.0)
@@ -246,12 +367,36 @@ The `stats` object contains:
   <title>Gazer.js Demo</title>
 </head>
 <body>
-  <video id="webcam" autoplay muted playsinline></video>
-  <button onclick="startTracking()">Start</button>
-  <button onclick="stopTracking()">Stop</button>
-  
-  <div id="stats"></div>
-  <div id="gaze-status"></div>
+  <div style="display: flex; gap: 20px;">
+    <div>
+      <video id="webcam" autoplay muted playsinline style="width: 640px; height: 480px;"></video>
+      <div>
+        <button onclick="startTracking()">Start</button>
+        <button onclick="stopTracking()">Stop</button>
+        
+        <!-- Performance Mode Controls -->
+        <select id="performanceMode" onchange="changePerformanceMode()">
+          <option value="low">Low Performance</option>
+          <option value="medium" selected>Medium Performance</option>
+          <option value="high">High Performance</option>
+          <option value="manual">Manual</option>
+        </select>
+        
+        <!-- Sensitivity Mode Controls -->
+        <select id="sensitivityMode" onchange="changeSensitivityMode()">
+          <option value="strict">Strict Sensitivity</option>
+          <option value="medium" selected>Medium Sensitivity</option>
+          <option value="relaxed">Relaxed Sensitivity</option>
+          <option value="manual">Manual</option>
+        </select>
+      </div>
+    </div>
+    
+    <div>
+      <div id="stats"></div>
+      <div id="gaze-status"></div>
+    </div>
+  </div>
 
   <!-- Include dependencies -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
@@ -262,24 +407,39 @@ The `stats` object contains:
   <script>
     let gazer;
 
-    // Initialize
+    // Initialize with performance and sensitivity modes
     function init() {
       gazer = new Gazer('webcam', {
-        targetFps: 20,
+        performanceMode: 'medium',    // Default performance mode
+        sensitivityMode: 'medium',    // Default sensitivity mode
         showFaceRectangle: true,
+        showGazeVector: true,
         
         onGazeChange: (gazeState, gazeData) => {
-          document.getElementById('gaze-status').textContent = 
-            `Looking: ${gazeState} (${Math.round(gazeData.confidence * 100)}% confidence)`;
+          document.getElementById('gaze-status').innerHTML = `
+            <h3>Gaze Status: ${gazeState.toUpperCase()}</h3>
+            <p>Confidence: ${Math.round((gazeData?.confidence || 0) * 100)}%</p>
+            <p>Horizontal: ${(gazeData?.horizontal || 0).toFixed(3)}</p>
+            <p>Vertical: ${(gazeData?.vertical || 0).toFixed(3)}</p>
+          `;
         },
         
         onStatsUpdate: (stats) => {
           document.getElementById('stats').innerHTML = `
-            <p>Faces: ${stats.faceCount}</p>
-            <p>Away Time: ${stats.awayTime}s</p>
-            <p>Distracted Time: ${stats.distractedTime}s</p>
-            <p>FPS: ${stats.processingFps.toFixed(1)}</p>
+            <h3>Statistics</h3>
+            <p><strong>Faces Detected:</strong> ${stats.faceCount}</p>
+            <p><strong>Away Time:</strong> ${stats.awayTime}s</p>
+            <p><strong>Distracted Time:</strong> ${stats.distractedTime}s</p>
+            <p><strong>Processing FPS:</strong> ${stats.processingFps.toFixed(1)}</p>
+            <p><strong>Frames Skipped:</strong> ${stats.framesSkipped}</p>
+            <p><strong>Canvas Updates:</strong> ${stats.canvasUpdates}</p>
+            <p><strong>Average Confidence:</strong> ${stats.confidence}%</p>
           `;
+        },
+        
+        onModelLoaded: () => {
+          console.log('✅ Models loaded successfully!');
+          document.querySelector('button').disabled = false;
         },
         
         onError: (error) => {
@@ -291,6 +451,7 @@ The `stats` object contains:
     async function startTracking() {
       if (gazer.isReady()) {
         await gazer.start();
+        console.log('🎯 Tracking started');
       } else {
         alert('Please wait for models to load');
       }
@@ -298,6 +459,17 @@ The `stats` object contains:
 
     async function stopTracking() {
       await gazer.stop();
+      console.log('⏹️ Tracking stopped');
+    }
+    
+    function changePerformanceMode() {
+      const mode = document.getElementById('performanceMode').value;
+      gazer.setPerformanceMode(mode);
+    }
+    
+    function changeSensitivityMode() {
+      const mode = document.getElementById('sensitivityMode').value;
+      gazer.setSensitivityMode(mode);
     }
 
     // Initialize when page loads
