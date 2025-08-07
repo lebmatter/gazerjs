@@ -94,11 +94,15 @@ class Gazer {
       cameraWidth: 640,
       cameraHeight: 480,
       
+      // Tracking data posting
+      postTrackingDataInterval: 30, // seconds - set to 0 to disable
+      
       // Callbacks
       onFaceDetected: null,
       onGazeChange: null,
       onAttentionChange: null,
       onStatsUpdate: null,
+      onPostTrackingData: null,
       onError: null,
       onModelLoaded: null,
       
@@ -249,6 +253,11 @@ class Gazer {
     this.totalAwayTime = 0;
     this.distractedStartTime = null;
     this.totalDistractedTime = 0;
+    this.faceCountChanges = 0; // Track number of face count changes
+    
+    // Tracking data posting
+    this.trackingDataTimer = null;
+    this.lastTrackingDataPost = Date.now();
     
     // Performance tracking
     this.frameCounter = 0;
@@ -613,6 +622,9 @@ class Gazer {
     const isAway = this.faceCount === 0;
 
     if (this.faceCount !== this.lastFaceCount) {
+      // Increment face count change counter
+      this.faceCountChanges++;
+      
       if (this.faceCount === 0) {
         this.log("No person detected (looking away or left)", "warning");
       } else if (this.faceCount > 1) {
@@ -670,12 +682,81 @@ class Gazer {
       framesSkipped: this.framesSkipped,
       canvasUpdates: this.canvasUpdates,
       gazeState: this.lastGazeState,
-      isIdle: this.isIdle
+      isIdle: this.isIdle,
+      faceCountChanges: this.faceCountChanges
     };
 
     if (this.config.onStatsUpdate) {
       this.config.onStatsUpdate(stats);
     }
+  }
+
+  // Start tracking data timer
+  startTrackingDataTimer() {
+    if (this.config.postTrackingDataInterval <= 0 || !this.config.onPostTrackingData) {
+      return;
+    }
+
+    this.stopTrackingDataTimer(); // Clear any existing timer
+    
+    const intervalMs = this.config.postTrackingDataInterval * 1000;
+    this.trackingDataTimer = setInterval(() => {
+      this.postTrackingData();
+    }, intervalMs);
+    
+    this.log(`Tracking data timer started - posting every ${this.config.postTrackingDataInterval} seconds`, "info");
+  }
+
+  // Stop tracking data timer
+  stopTrackingDataTimer() {
+    if (this.trackingDataTimer) {
+      clearInterval(this.trackingDataTimer);
+      this.trackingDataTimer = null;
+      this.log("Tracking data timer stopped", "info");
+    }
+  }
+
+  // Post tracking data via callback
+  postTrackingData() {
+    if (!this.config.onPostTrackingData) {
+      return;
+    }
+
+    const now = Date.now();
+    
+    let currentAwayTime = this.totalAwayTime;
+    if (this.awayStartTime !== null) {
+      currentAwayTime += now - this.awayStartTime;
+    }
+
+    let currentDistractedTime = this.totalDistractedTime;
+    if (this.distractedStartTime !== null) {
+      currentDistractedTime += now - this.distractedStartTime;
+    }
+
+    const trackingData = {
+      timestamp: now,
+      sessionDuration: Math.floor((now - this.lastTrackingDataPost) / 1000),
+      faceCountChanges: this.faceCountChanges,
+      totalAwayTime: Math.floor(currentAwayTime / 1000),
+      totalDistractedTime: Math.floor(currentDistractedTime / 1000),
+      currentFaceCount: this.faceCount,
+      currentGazeState: this.lastGazeState,
+      processingFps: this.processingFps,
+      framesSkipped: this.framesSkipped,
+      canvasUpdates: this.canvasUpdates,
+      isRunning: this.isRunning,
+      isIdle: this.isIdle
+    };
+
+    this.log(`Posting tracking data - Face changes: ${this.faceCountChanges}, Away time: ${trackingData.totalAwayTime}s, Distracted time: ${trackingData.totalDistractedTime}s`, "info");
+    
+    // Reset counters for next interval
+    this.faceCountChanges = 0;
+    this.lastTrackingDataPost = now;
+    
+    // Call the callback with the tracking data
+    this.config.onPostTrackingData(trackingData);
   }
 
   // Public API methods
@@ -718,6 +799,10 @@ class Gazer {
       this.video.addEventListener('loadedmetadata', this.resizeListener);
 
       this.isRunning = true;
+      
+      // Start tracking data timer if configured
+      this.startTrackingDataTimer();
+      
       this.log("Camera started successfully", "success");
 
     } catch (error) {
@@ -731,6 +816,9 @@ class Gazer {
 
   async stop() {
     this.isRunning = false;
+
+    // Stop tracking data timer
+    this.stopTrackingDataTimer();
 
     if (this.camera) {
       await this.camera.stop();
@@ -753,6 +841,7 @@ class Gazer {
     this.totalAwayTime = 0;
     this.distractedStartTime = null;
     this.totalDistractedTime = 0;
+    this.faceCountChanges = 0;
     this.currentFaces = [];
     this.lastGazeState = null;
     this.gazeHistory = [];
@@ -931,6 +1020,52 @@ class Gazer {
     });
   }
 
+  // Set tracking data posting interval
+  setTrackingDataInterval(seconds) {
+    const newInterval = Math.max(0, parseInt(seconds));
+    this.config.postTrackingDataInterval = newInterval;
+    
+    if (this.isRunning) {
+      if (newInterval > 0 && this.config.onPostTrackingData) {
+        this.startTrackingDataTimer();
+        this.log(`Tracking data interval changed to ${newInterval} seconds`, "info");
+      } else {
+        this.stopTrackingDataTimer();
+        this.log("Tracking data posting disabled", "info");
+      }
+    } else {
+      this.log(`Tracking data interval set to ${newInterval} seconds (will start when tracking begins)`, "info");
+    }
+  }
+
+  // Set tracking data callback
+  setTrackingDataCallback(callback) {
+    this.config.onPostTrackingData = callback;
+    
+    if (this.isRunning) {
+      if (callback && this.config.postTrackingDataInterval > 0) {
+        this.startTrackingDataTimer();
+        this.log("Tracking data callback set and timer started", "info");
+      } else {
+        this.stopTrackingDataTimer();
+        this.log("Tracking data callback removed and timer stopped", "info");
+      }
+    } else {
+      this.log("Tracking data callback set (will start when tracking begins)", "info");
+    }
+  }
+
+  // Force post tracking data immediately
+  forcePostTrackingData() {
+    if (!this.config.onPostTrackingData) {
+      this.log("No tracking data callback configured", "warning");
+      return;
+    }
+    
+    this.postTrackingData();
+    this.log("Tracking data posted immediately", "info");
+  }
+
   getStats() {
     let currentAwayTime = this.totalAwayTime;
     if (this.awayStartTime !== null) {
@@ -944,6 +1079,7 @@ class Gazer {
 
     return {
       faceCount: this.faceCount,
+      faceCountChanges: this.faceCountChanges,
       awayTime: Math.floor(currentAwayTime / 1000),
       distractedTime: Math.floor(currentDistractedTime / 1000),
       processingFps: this.processingFps,
@@ -968,6 +1104,9 @@ class Gazer {
     if (this.isRunning) {
       this.stop();
     }
+    
+    // Ensure tracking data timer is stopped
+    this.stopTrackingDataTimer();
     
     if (this.canvas && this.canvas.parentNode) {
       this.canvas.parentNode.removeChild(this.canvas);

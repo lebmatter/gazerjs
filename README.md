@@ -13,14 +13,15 @@ Gazer.js enables developers to easily integrate face detection and gaze tracking
 - 🎯 **Real-time Gaze Tracking** - Detect when users are looking at or away from the screen
 - 👤 **Face Detection** - Robust face detection with confidence scoring
 - 📊 **Attention Analytics** - Track attention time, distraction periods, and engagement metrics
-- 🚀 **Performance Modes** - Pre-configured Low/Medium/High performance settings for optimal CPU usage
+- � **Tracking Data API** - Automatic data posting to external APIs with configurable intervals
+- �🚀 **Performance Modes** - Pre-configured Low/Medium/High performance settings for optimal CPU usage
 - 🎛️ **Sensitivity Modes** - Strict/Medium/Relaxed gaze detection presets for different use cases
 - ⚙️ **Highly Configurable** - 30+ configuration options with smart preset management
 - ⚡ **Performance Optimized** - Frame skipping, idle detection, and efficient canvas updates
 - 🔄 **Event-Driven** - Real-time callbacks for all major events
 - 🎨 **Visual Overlays** - Optional face rectangles, gaze vectors, and eye tracking indicators
 - 📱 **Browser Compatible** - Works in all modern browsers with webcam access
-- �️ **Easy Integration** - Drop-in solution with minimal setup required
+- 🛠️ **Easy Integration** - Drop-in solution with minimal setup required
 - 🔧 **Smart Canvas Alignment** - Automatic canvas sizing and positioning for accurate overlays
 
 ## 🚀 Quick Start
@@ -62,6 +63,21 @@ const gazer = new Gazer('webcam', {
   sensitivityMode: 'strict',      // 'strict', 'medium', 'relaxed'
   onGazeChange: (gazeState, gazeData) => {
     console.log('Gaze direction:', gazeState);
+  }
+});
+
+// With automatic tracking data posting to API
+const gazer = new Gazer('webcam', {
+  postTrackingDataInterval: 30,   // Post data every 30 seconds
+  onPostTrackingData: async (data) => {
+    await fetch('/api/tracking', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+  },
+  onGazeChange: (gazeState) => {
+    console.log('Gaze:', gazeState);
   }
 });
 
@@ -216,6 +232,30 @@ Checks if tracking is currently active.
 console.log('Tracking active:', gazer.isActive());
 ```
 
+#### `setTrackingDataInterval(seconds)`
+Changes tracking data posting interval at runtime.
+```javascript
+gazer.setTrackingDataInterval(60);  // Change to 1 minute
+gazer.setTrackingDataInterval(0);   // Disable posting
+```
+
+#### `setTrackingDataCallback(callback)`
+Changes tracking data callback function at runtime.
+```javascript
+gazer.setTrackingDataCallback(async (data) => {
+  await fetch('/api/tracking', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+});
+```
+
+#### `forcePostTrackingData()`
+Triggers immediate tracking data post regardless of interval.
+```javascript
+gazer.forcePostTrackingData();
+```
+
 #### `destroy()`
 Cleans up resources and removes canvas overlay.
 ```javascript
@@ -272,6 +312,14 @@ gazer.destroy();
 }
 ```
 
+### Tracking Data API
+```javascript
+{
+  postTrackingDataInterval: 30,        // Seconds between data posts (0 to disable)
+  onPostTrackingData: null             // Callback function for posting data
+}
+```
+
 ### MediaPipe Settings
 ```javascript
 {
@@ -291,6 +339,101 @@ gazer.destroy();
   cameraHeight: 480          // Camera resolution height
 }
 ```
+
+## 📡 Tracking Data API
+
+The Tracking Data API allows you to automatically collect and send tracking analytics to external APIs at regular intervals. This is perfect for learning analytics, attention monitoring systems, and user behavior analysis.
+
+### Basic Setup
+```javascript
+const gazer = new Gazer('webcam', {
+  postTrackingDataInterval: 30,  // Post data every 30 seconds
+  onPostTrackingData: async (data) => {
+    // Send to your analytics endpoint
+    await fetch('https://your-api.com/analytics/tracking', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer your-token'
+      },
+      body: JSON.stringify(data)
+    });
+  }
+});
+```
+
+### Advanced Example with Error Handling
+```javascript
+const gazer = new Gazer('webcam', {
+  postTrackingDataInterval: 60,  // Post every minute
+  onPostTrackingData: async (data) => {
+    try {
+      const response = await fetch('/api/tracking-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...data,
+          userId: getCurrentUserId(),
+          sessionId: getSessionId(),
+          metadata: {
+            userAgent: navigator.userAgent,
+            timestamp: new Date().toISOString()
+          }
+        })
+      });
+      
+      if (!response.ok) {
+        console.error('Failed to post tracking data:', response.status);
+      }
+    } catch (error) {
+      console.error('Tracking data post error:', error);
+    }
+  }
+});
+```
+
+### Dynamic Control
+```javascript
+// Change interval during runtime
+gazer.setTrackingDataInterval(120);  // 2 minutes
+
+// Force immediate data post
+gazer.forcePostTrackingData();
+
+// Update callback
+gazer.setTrackingDataCallback(async (data) => {
+  // New callback logic
+  console.log('Face count changes:', data.faceCountChanges);
+});
+
+// Disable tracking data
+gazer.setTrackingDataInterval(0);
+```
+
+### Data Structure
+Each callback receives comprehensive tracking data:
+```javascript
+{
+  timestamp: 1691420400000,           // Current timestamp
+  sessionDuration: 30,                // Seconds since last post
+  faceCountChanges: 5,                // Face count transitions (engagement indicator)
+  totalAwayTime: 15,                  // Total away time (seconds)
+  totalDistractedTime: 8,             // Total distracted time (seconds)
+  currentFaceCount: 1,                // Current faces detected
+  currentGazeState: "screen",         // Current gaze direction
+  processingFps: 15,                  // Performance metrics
+  framesSkipped: 120,
+  canvasUpdates: 450,
+  isRunning: true,
+  isIdle: false
+}
+```
+
+**Key Metrics for Analytics:**
+- `faceCountChanges`: High values indicate movement/distraction, low values suggest focus
+- `totalAwayTime`: Time user was completely away from screen
+- `totalDistractedTime`: Time user was present but looking away
+- `sessionDuration`: Time interval for the posted data
 
 ## 🎯 Event Callbacks
 
@@ -339,6 +482,37 @@ onError: (error) => {
 }
 ```
 
+### onPostTrackingData
+Triggered at regular intervals to post tracking data to external APIs.
+```javascript
+onPostTrackingData: async (trackingData) => {
+  // Send data to your analytics API
+  await fetch('https://your-api.com/tracking-data', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(trackingData)
+  });
+}
+```
+
+**Tracking Data Object:**
+```javascript
+{
+  timestamp: 1691420400000,           // Current timestamp
+  sessionDuration: 30,                // Seconds since last data post
+  faceCountChanges: 5,                // Number of times face count changed
+  totalAwayTime: 15,                  // Total seconds user was away
+  totalDistractedTime: 8,             // Total seconds user was distracted
+  currentFaceCount: 1,                // Current number of faces detected
+  currentGazeState: "screen",         // Current gaze state
+  processingFps: 15,                  // Current processing FPS
+  framesSkipped: 120,                 // Total frames skipped
+  canvasUpdates: 450,                 // Total canvas updates
+  isRunning: true,                    // Whether tracking is active
+  isIdle: false                       // Whether in idle mode
+}
+```
+
 ## 📊 Statistics Object
 
 The `stats` object contains:
@@ -346,6 +520,7 @@ The `stats` object contains:
 ```javascript
 {
   faceCount: 1,           // Number of faces currently detected
+  faceCountChanges: 3,    // Number of times face count changed (session total)
   awayTime: 15,           // Total time away from screen (seconds)
   distractedTime: 8,      // Total time looking away (seconds)
   confidence: 87,         // Average detection confidence (%)
@@ -481,13 +656,16 @@ The `stats` object contains:
 
 ## 🎯 Use Cases
 
-- **📚 Educational Platforms** - Monitor student attention during online classes
-- **💼 Video Conferencing** - Track engagement in meetings and presentations  
+- **📚 Educational Platforms** - Monitor student attention during online classes with automatic analytics posting
+- **💼 Video Conferencing** - Track engagement in meetings and presentations with real-time data  
 - **🎮 Gaming Applications** - Eye-tracking controls and attention-based gameplay
-- **🔬 Research Studies** - Attention and behavior analysis
-- **💻 Productivity Tools** - Focus tracking and distraction alerts
+- **🔬 Research Studies** - Attention and behavior analysis with automated data collection
+- **💻 Productivity Tools** - Focus tracking and distraction alerts with performance insights
 - **♿ Accessibility** - Gaze-based navigation for disabled users
 - **📱 Mobile Apps** - Attention monitoring in mobile web applications
+- **📊 Learning Analytics** - Automated attention metrics for educational content effectiveness
+- **🏢 Corporate Training** - Employee engagement tracking during training sessions
+- **🎥 Content Analysis** - Understanding viewer attention patterns for video content
 
 ## ⚡ Performance Tips
 
