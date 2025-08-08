@@ -385,6 +385,80 @@
                 </div>
               </div>
 
+              <!-- Retina Tracking Stats -->
+              <div class="row g-3 mb-4">
+                <div class="col-12">
+                  <div class="card stat-card bg-info text-white">
+                    <div class="card-body">
+                      <p class="stat-value" id="retinaLocationCount">0</p>
+                      <small>Retina Locations Recorded</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Retina Tracking Controls -->
+              <div class="card mb-4">
+                <div class="card-header">
+                  <h6 class="card-title mb-0">
+                    <i class="bi bi-crosshair me-2"></i>Retina Tracking
+                  </h6>
+                </div>
+                <div class="card-body">
+                  <div class="form-check mb-2">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      id="trackRetinaLocations"
+                      checked
+                    />
+                    <label class="form-check-label" for="trackRetinaLocations"
+                      >Enable retina tracking</label
+                    >
+                  </div>
+                  <div class="mb-2">
+                    <label class="form-label">Change Threshold</label>
+                    <div class="d-flex align-items-center">
+                      <input
+                        type="range"
+                        class="form-range me-3"
+                        id="retinaChangeThreshold"
+                        min="0.01"
+                        max="0.5"
+                        step="0.01"
+                        value="0.1"
+                      />
+                      <span class="range-display" id="retinaChangeValue"
+                        >10%</span
+                      >
+                    </div>
+                  </div>
+                  <div class="mb-2">
+                    <label class="form-label">Record Interval</label>
+                    <div class="d-flex align-items-center">
+                      <input
+                        type="range"
+                        class="form-range me-3"
+                        id="retinaInterval"
+                        min="1"
+                        max="30"
+                        step="1"
+                        value="5"
+                      />
+                      <span class="range-display" id="retinaIntervalValue"
+                        >5s</span
+                      >
+                    </div>
+                  </div>
+                  <button
+                    id="forcePostData"
+                    class="btn btn-sm btn-outline-info"
+                  >
+                    Post Tracking Data Now
+                  </button>
+                </div>
+              </div>
+
               <!-- Performance Stats -->
               <div class="card">
                 <div class="card-header">
@@ -444,7 +518,7 @@
     <script src="gazer.js"></script>
     <script>
       const gazer = new Gazer("video", {
-        postTrackingDataInterval: 60, // Post tracking data every 1 minute
+        postTrackingDataInterval: 10, // Post tracking data every 10 seconds for demo
         onPostTrackingData: (trackingData) => {
           console.log("=== TRACKING DATA ===");
           console.log(
@@ -465,6 +539,25 @@
           console.log("Canvas Updates:", trackingData.canvasUpdates);
           console.log("Is Running:", trackingData.isRunning);
           console.log("Is Idle:", trackingData.isIdle);
+          console.log(
+            "Retina Locations Count:",
+            trackingData.retinaLocations.length
+          );
+
+          // Log detailed retina location data
+          if (trackingData.retinaLocations.length > 0) {
+            console.log("=== RETINA LOCATIONS ===");
+            trackingData.retinaLocations.forEach((location, index) => {
+              console.log(`Location ${index + 1}:`, {
+                x: location.x.toFixed(3),
+                y: location.y.toFixed(3),
+                confidence: location.confidence.toFixed(2),
+                gazeDirection: location.gazeDirection,
+                timestamp: new Date(location.timestamp).toLocaleTimeString(),
+              });
+            });
+          }
+
           console.log("=====================");
         },
         onGazeChange: (gazeState, gazeData) => {
@@ -506,6 +599,10 @@
             stats.confidence || 0
           }%`;
 
+          // Update retina tracking stats
+          document.getElementById("retinaLocationCount").textContent =
+            stats.retinaLocationCount || 0;
+
           // Update performance stats
           document.getElementById("processingFps").textContent = Math.round(
             stats.processingFps || 0
@@ -516,6 +613,40 @@
             stats.canvasUpdates || 0;
         },
       });
+
+      // Initialize dropdowns with available modes
+      function initializeControls() {
+        // Populate performance mode dropdown
+        const performanceModeSelect =
+          document.getElementById("performanceMode");
+        performanceModeSelect.innerHTML =
+          '<option value="manual">Manual</option>';
+        gazer.getPerformanceModes().forEach((mode) => {
+          const option = document.createElement("option");
+          option.value = mode.value;
+          option.textContent = mode.label;
+          option.title = mode.description;
+          performanceModeSelect.appendChild(option);
+        });
+        performanceModeSelect.value = "medium"; // Set default
+
+        // Populate sensitivity mode dropdown
+        const sensitivityModeSelect =
+          document.getElementById("sensitivityMode");
+        sensitivityModeSelect.innerHTML =
+          '<option value="manual">Manual</option>';
+        gazer.getSensitivityModes().forEach((mode) => {
+          const option = document.createElement("option");
+          option.value = mode.value;
+          option.textContent = mode.label;
+          option.title = mode.description;
+          sensitivityModeSelect.appendChild(option);
+        });
+        sensitivityModeSelect.value = "medium"; // Set default
+      }
+
+      // Initialize controls
+      initializeControls();
 
       // Control handlers
 
@@ -670,6 +801,37 @@
 
       document.getElementById("enableLogs").addEventListener("change", (e) => {
         gazer.setEnableLogs(e.target.checked);
+      });
+
+      // Retina tracking controls
+      document
+        .getElementById("trackRetinaLocations")
+        .addEventListener("change", (e) => {
+          gazer.setTrackRetinaLocations(e.target.checked);
+        });
+
+      document
+        .getElementById("retinaChangeThreshold")
+        .addEventListener("input", (e) => {
+          const threshold = parseFloat(e.target.value);
+          document.getElementById(
+            "retinaChangeValue"
+          ).textContent = `${Math.round(threshold * 100)}%`;
+          gazer.setRetinaLocationChangeThreshold(threshold);
+        });
+
+      document
+        .getElementById("retinaInterval")
+        .addEventListener("input", (e) => {
+          const interval = parseInt(e.target.value);
+          document.getElementById(
+            "retinaIntervalValue"
+          ).textContent = `${interval}s`;
+          gazer.setRetinaLocationInterval(interval);
+        });
+
+      document.getElementById("forcePostData").addEventListener("click", () => {
+        gazer.forcePostTrackingData();
       });
 
       // Camera control buttons

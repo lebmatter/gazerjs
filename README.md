@@ -11,9 +11,10 @@ Gazer.js enables developers to easily integrate face detection and gaze tracking
 ## ✨ Features
 
 - 🎯 **Real-time Gaze Tracking** - Detect when users are looking at or away from the screen
-- 👤 **Face Detection** - Robust face detection with confidence scoring
+- � **Retina Location Tracking** - Record precise retina positions with configurable change thresholds and intervals
+- �👤 **Face Detection** - Robust face detection with confidence scoring
 - 📊 **Attention Analytics** - Track attention time, distraction periods, and engagement metrics
-- � **Tracking Data API** - Automatic data posting to external APIs with configurable intervals
+- 📡 **Tracking Data API** - Automatic data posting to external APIs with configurable intervals
 - �🚀 **Performance Modes** - Pre-configured Low/Medium/High performance settings for optimal CPU usage
 - 🎛️ **Sensitivity Modes** - Strict/Medium/Relaxed gaze detection presets for different use cases
 - ⚙️ **Highly Configurable** - 30+ configuration options with smart preset management
@@ -256,6 +257,27 @@ Triggers immediate tracking data post regardless of interval.
 gazer.forcePostTrackingData();
 ```
 
+#### `setTrackRetinaLocations(enabled)`
+Enable or disable retina location tracking.
+```javascript
+gazer.setTrackRetinaLocations(true);   // Enable tracking
+gazer.setTrackRetinaLocations(false);  // Disable tracking
+```
+
+#### `setRetinaLocationChangeThreshold(threshold)`
+Set the movement threshold for recording new retina positions.
+```javascript
+gazer.setRetinaLocationChangeThreshold(0.05);  // 5% change required
+gazer.setRetinaLocationChangeThreshold(0.15);  // 15% change required
+```
+
+#### `setRetinaLocationInterval(seconds)`
+Set the time interval for recording retina positions regardless of movement.
+```javascript
+gazer.setRetinaLocationInterval(3);   // Record every 3 seconds
+gazer.setRetinaLocationInterval(10);  // Record every 10 seconds
+```
+
 #### `destroy()`
 Cleans up resources and removes canvas overlay.
 ```javascript
@@ -301,6 +323,21 @@ gazer.destroy();
   gazeHistorySize: 5         // Frames to smooth gaze detection (2-10)
 }
 ```
+
+### Retina Location Tracking
+```javascript
+{
+  trackRetinaLocations: true,              // Enable retina location tracking
+  retinaLocationChangeThreshold: 0.1,      // Record when movement > 10% (0.01-1.0)
+  retinaLocationInterval: 5                // Record every N seconds regardless of change
+}
+```
+
+**Retina tracking records normalized coordinates (0-1) where:**
+- `x: 0` = far left, `x: 1` = far right
+- `y: 0` = top, `y: 1` = bottom
+- Locations are recorded when movement exceeds threshold OR when interval time passes
+- Each location includes `x`, `y`, `confidence`, `timestamp`, and `gazeDirection`
 
 ### Display Options
 ```javascript
@@ -425,7 +462,17 @@ Each callback receives comprehensive tracking data:
   framesSkipped: 120,
   canvasUpdates: 450,
   isRunning: true,
-  isIdle: false
+  isIdle: false,
+  retinaLocations: [                  // Array of retina positions recorded this session
+    {
+      x: 0.523,                       // Normalized x position (0-1)
+      y: 0.456,                       // Normalized y position (0-1)
+      confidence: 0.89,               // Detection confidence
+      timestamp: 1691420385000,       // When position was recorded
+      gazeDirection: "screen"         // Gaze state when recorded
+    },
+    // ... more locations
+  ]
 }
 ```
 
@@ -434,6 +481,7 @@ Each callback receives comprehensive tracking data:
 - `totalAwayTime`: Time user was completely away from screen
 - `totalDistractedTime`: Time user was present but looking away
 - `sessionDuration`: Time interval for the posted data
+- `retinaLocations`: Precise gaze positions for heatmap analysis and attention mapping
 
 ## 🎯 Event Callbacks
 

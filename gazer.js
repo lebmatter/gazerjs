@@ -97,6 +97,11 @@ class Gazer {
       // Tracking data posting
       postTrackingDataInterval: 30, // seconds - set to 0 to disable
       
+      // Retina location tracking
+      trackRetinaLocations: true,
+      retinaLocationChangeThreshold: 0.1, // 10% change to record new position
+      retinaLocationInterval: 5, // seconds - record location every X seconds regardless of change
+      
       // Callbacks
       onFaceDetected: null,
       onGazeChange: null,
@@ -259,6 +264,11 @@ class Gazer {
     this.trackingDataTimer = null;
     this.lastTrackingDataPost = Date.now();
     
+    // Retina location tracking
+    this.retinaLocations = [];
+    this.lastRetinaPosition = null;
+    this.lastRetinaLocationRecord = Date.now();
+    
     // Performance tracking
     this.frameCounter = 0;
     this.lastFrameTime = Date.now();
@@ -402,6 +412,60 @@ class Gazer {
     };
   }
 
+  // Calculate and record retina position if tracking is enabled
+  recordRetinaPosition(gazeData) {
+    if (!this.config.trackRetinaLocations || !gazeData) {
+      return;
+    }
+
+    const now = Date.now();
+    const timeSinceLastRecord = (now - this.lastRetinaLocationRecord) / 1000;
+    
+    // Convert gaze data to screen coordinates (normalized 0-1)
+    const retinaPosition = {
+      x: Math.max(0, Math.min(1, 0.5 + gazeData.horizontal)),
+      y: Math.max(0, Math.min(1, 0.5 + gazeData.vertical)),
+      confidence: gazeData.confidence,
+      timestamp: now
+    };
+
+    let shouldRecord = false;
+
+    // Record if this is the first position
+    if (!this.lastRetinaPosition) {
+      shouldRecord = true;
+    }
+    // Record if enough time has passed (interval-based recording)
+    else if (timeSinceLastRecord >= this.config.retinaLocationInterval) {
+      shouldRecord = true;
+    }
+    // Record if position changed significantly (change-based recording)
+    else if (this.lastRetinaPosition) {
+      const deltaX = Math.abs(retinaPosition.x - this.lastRetinaPosition.x);
+      const deltaY = Math.abs(retinaPosition.y - this.lastRetinaPosition.y);
+      const maxDelta = Math.max(deltaX, deltaY);
+      
+      if (maxDelta >= this.config.retinaLocationChangeThreshold) {
+        shouldRecord = true;
+      }
+    }
+
+    if (shouldRecord) {
+      this.retinaLocations.push({
+        x: retinaPosition.x,
+        y: retinaPosition.y,
+        confidence: retinaPosition.confidence,
+        timestamp: retinaPosition.timestamp,
+        gazeDirection: gazeData.direction
+      });
+
+      this.lastRetinaPosition = retinaPosition;
+      this.lastRetinaLocationRecord = now;
+
+      this.log(`Recorded retina position: (${retinaPosition.x.toFixed(3)}, ${retinaPosition.y.toFixed(3)}) confidence: ${retinaPosition.confidence.toFixed(2)}`, "info");
+    }
+  }
+
   // Smooth gaze detection
   smoothGazeDetection(currentGaze) {
     if (!currentGaze) return "unknown";
@@ -492,6 +556,10 @@ class Gazer {
 
       if (gazeData) {
         const smoothedGaze = this.smoothGazeDetection(gazeData);
+        
+        // Record retina position if tracking is enabled
+        this.recordRetinaPosition(gazeData);
+        
         this.updateGazeStatus(smoothedGaze, gazeData);
 
         if (this.config.showGazeVector || this.config.showEyePoints) {
@@ -683,7 +751,8 @@ class Gazer {
       canvasUpdates: this.canvasUpdates,
       gazeState: this.lastGazeState,
       isIdle: this.isIdle,
-      faceCountChanges: this.faceCountChanges
+      faceCountChanges: this.faceCountChanges,
+      retinaLocationCount: this.config.trackRetinaLocations ? this.retinaLocations.length : 0
     };
 
     if (this.config.onStatsUpdate) {
@@ -746,14 +815,20 @@ class Gazer {
       framesSkipped: this.framesSkipped,
       canvasUpdates: this.canvasUpdates,
       isRunning: this.isRunning,
-      isIdle: this.isIdle
+      isIdle: this.isIdle,
+      retinaLocations: this.config.trackRetinaLocations ? [...this.retinaLocations] : []
     };
 
-    this.log(`Posting tracking data - Face changes: ${this.faceCountChanges}, Away time: ${trackingData.totalAwayTime}s, Distracted time: ${trackingData.totalDistractedTime}s`, "info");
+    this.log(`Posting tracking data - Face changes: ${this.faceCountChanges}, Away time: ${trackingData.totalAwayTime}s, Distracted time: ${trackingData.totalDistractedTime}s, Retina locations: ${trackingData.retinaLocations.length}`, "info");
     
     // Reset counters for next interval
     this.faceCountChanges = 0;
     this.lastTrackingDataPost = now;
+    
+    // Reset retina locations array for next interval
+    if (this.config.trackRetinaLocations) {
+      this.retinaLocations = [];
+    }
     
     // Call the callback with the tracking data
     this.config.onPostTrackingData(trackingData);
@@ -849,6 +924,11 @@ class Gazer {
     this.framesSkipped = 0;
     this.canvasUpdates = 0;
     this.isIdle = false;
+    
+    // Reset retina tracking
+    this.retinaLocations = [];
+    this.lastRetinaPosition = null;
+    this.lastRetinaLocationRecord = Date.now();
 
     this.log("Camera stopped", "info");
   }
@@ -924,6 +1004,28 @@ class Gazer {
   setEnableLogs(enabled) {
     this.config.enableLogs = Boolean(enabled);
     this.log(`Console logging ${enabled ? 'enabled' : 'disabled'}`, "info");
+  }
+
+  // Retina tracking configuration methods
+  setTrackRetinaLocations(enabled) {
+    this.config.trackRetinaLocations = Boolean(enabled);
+    if (!enabled) {
+      this.retinaLocations = [];
+      this.lastRetinaPosition = null;
+    }
+    this.log(`Retina location tracking ${enabled ? 'enabled' : 'disabled'}`, "info");
+  }
+
+  setRetinaLocationChangeThreshold(threshold) {
+    const newThreshold = Math.max(0.01, Math.min(1.0, parseFloat(threshold)));
+    this.config.retinaLocationChangeThreshold = newThreshold;
+    this.log(`Retina location change threshold set to ${(newThreshold * 100).toFixed(1)}%`, "info");
+  }
+
+  setRetinaLocationInterval(seconds) {
+    const newInterval = Math.max(1, parseInt(seconds));
+    this.config.retinaLocationInterval = newInterval;
+    this.log(`Retina location recording interval set to ${newInterval} seconds`, "info");
   }
 
   // Set performance mode
@@ -1010,7 +1112,10 @@ class Gazer {
       showGazeVector: (val) => this.setShowGazeVector(val),
       showEyePoints: (val) => this.setShowEyePoints(val),
       showFaceRectangle: (val) => this.setShowFaceRectangle(val),
-      enableLogs: (val) => this.setEnableLogs(val)
+      enableLogs: (val) => this.setEnableLogs(val),
+      trackRetinaLocations: (val) => this.setTrackRetinaLocations(val),
+      retinaLocationChangeThreshold: (val) => this.setRetinaLocationChangeThreshold(val),
+      retinaLocationInterval: (val) => this.setRetinaLocationInterval(val)
     };
 
     Object.keys(settings).forEach(key => {
